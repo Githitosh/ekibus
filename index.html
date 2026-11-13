@@ -2222,6 +2222,8 @@ function makePlaceSearch(key) {
         const near = x => distM(bias, x) <= 60000;
         const g = x => near(x) ? (nameHit(x.label) ? 0 : 1) : (nameHit(x.label) ? 2 : 9);
         remote = remote.map((x, i) => ({ x, i, g: g(x) })).filter(o => o.g < 9).sort((a, b) => a.g - b.g || a.i - b.i).map(o => o.x);
+      } else if (remote.some(x => nameHit(x.label))) {
+        remote = remote.filter(x => nameHit(x.label)); // 基準の場所がないときは、名前が合うものだけ
       }
       items = [...local, ...remote].slice(0, 10);
       if (items.length) render(); else msg('見つかりませんでした。駅名を短くする（例：「森本駅」→「森本」）か、住所で探してください。地図アプリで調べた「緯度,経度」を貼り付けても設定できます。');
