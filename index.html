@@ -273,6 +273,8 @@ a.btn{display:inline-flex;align-items:center;text-decoration:none}
 .fav.kind-back{box-shadow:inset 4px 0 0 var(--back);padding-left:12px}
 .fav-edit{display:grid;gap:10px;width:100%;padding:4px 0}
 .memo{font-size:13px;color:var(--text-2);margin-top:3px}
+.gmap-link{display:inline-block;font-size:13px;color:var(--accent-strong);margin-top:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;text-decoration:none}
+.gmap-link:hover{background:var(--accent-weak)}
 
 /* ---------- 出勤・帰宅の予想 ---------- */
 .predict{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-bottom:14px}
@@ -1363,6 +1365,7 @@ function renderCard(id) {
   const busy = !!res.ctrl || !!res.queued;
 
   const refreshBtn = h('button', { class: 'icon-btn small' + (busy ? ' is-busy' : ''), type: 'button', 'aria-label': `${route.from.name}から${route.to.name}を更新`, title: '更新', onclick: () => requestFetch(id, { force: true }) }, svg(ICON.refresh));
+  const gmapBtn = h('a', { class: 'gmap-link', href: googleMapsUrl(route), target: '_blank', rel: 'noopener noreferrer', title: 'Googleマップの乗換案内で、番線や最新の運行状況を確認します' }, 'Googleマップで確認');
   const meta = h('div', { class: 'card-meta' },
     h('span', { class: 'tag', text: prov.label }),
     route.provider === 'hokutetsu' && HOKUTETSU ? h('span', { text: HOKUTETSU.revLabel }) : null,
@@ -1380,7 +1383,8 @@ function renderCard(id) {
       h('h2', { class: 'route-title', id: 'title-' + id, style: 'margin:0' },
         h('span', { text: route.from.name }), h('span', { class: 'arrow', 'aria-label': 'から', text: '→' }), h('span', { text: route.to.name })),
       meta,
-      route.memo ? h('div', { class: 'memo', text: 'のりばメモ：' + route.memo }) : null),
+      route.memo ? h('div', { class: 'memo', text: 'のりばメモ：' + route.memo }) : null,
+      gmapBtn),
     refreshBtn);
 
   const body = h('div', { class: 'card-body' });
@@ -1407,6 +1411,16 @@ function renderCard(id) {
   }
   card.dataset.sig = cardSig(res, now, busy);
   card.replaceChildren(head, body);
+}
+/* Googleマップの乗換案内を開く（番線・遅れなどの最新情報の確認用。データは取り込まない） */
+function gmapPlace(st, provider) {
+  if (st && isFinite(st.lat) && isFinite(st.lon) && st.lat != null && st.lon != null) return `${st.lat},${st.lon}`;
+  if (provider === 'hokutetsu') return `${st.name} バス停 石川県金沢市`;
+  return st ? st.name : '';
+}
+function googleMapsUrl(route) {
+  const p = new URLSearchParams({ api: '1', origin: gmapPlace(route.from, route.provider), destination: gmapPlace(route.to, route.provider), travelmode: 'transit' });
+  return 'https://www.google.com/maps/dir/?' + p.toString();
 }
 function cardSig(res, now, busy) {
   return visibleTrips(res, now).map(t => t.key).join(',') + '|' + res.status + '|' + busy + '|' + res.qkey + '|' + qKey();
