@@ -15,6 +15,7 @@
 
 ## データ
 - [Transitous](https://transitous.org/)（[データ提供元](https://transitous.org/sources/)、地図データ © OpenStreetMap contributors）
+- 全国のバス停（`busdata/` 都道府県ごと）：[国土数値情報（バス停留所データ、2022年）](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P11-v3_0.html)（国土交通省、公共データ利用規約 PDL1.0）を [tomtkg/Japanese-Bus-Stop-Data](https://github.com/tomtkg/Japanese-Bus-Stop-Data)（CC BY 4.0）が抜粋したものから停留所名・事業者・系統を加工。時刻は含みません
 - 駅名のよみ・位置（ひらがな検索用）：[TrainLCD StationAPI](https://github.com/TrainLCD/StationAPI) の駅データ（© TinyKitten, MIT License）を加工
 - 駅すぱあと API（利用者が自分のアクセスキーを設定した場合）
 - 北鉄バス：[北陸鉄道 時刻・運賃検索](https://arj.hokutetsu.co.jp/timetable/pathway.php)（令和8年10月1日改正）から収録

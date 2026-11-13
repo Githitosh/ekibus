@@ -1411,6 +1411,74 @@ const StationIndex = {
     }));
   }
 };
+/* 全国のバス停（停留所名・事業者・系統）。都道府県ごとのファイルを、検索するときに読み込む
+   出典：国土数値情報（バス停留所データ、2022年）国土交通省 を tomtkg/Japanese-Bus-Stop-Data（CC BY 4.0）が抜粋したものを加工 */
+const BusStops = {
+  base: /(^|\.)githitosh\.github\.io$/.test(location.hostname) ? new URL('.', location.href).href : 'https://githitosh.github.io/ekibus/',
+  data: new Map(), loading: new Map(), failed: new Set(),
+  codes() {
+    const set = regionPrefs();
+    const all = PREF_JA.map((p, i) => i).filter(i => i > 0);
+    return set ? all.filter(i => set.has(PREF_JA[i])) : all;
+  },
+  ready(codes) { return codes.every(c => this.data.has(c) || this.failed.has(c)); },
+  load(code) {
+    if (this.data.has(code)) return Promise.resolve(this.data.get(code));
+    if (this.loading.has(code)) return this.loading.get(code);
+    const pr = (async () => {
+      try {
+        const res = await fetch(`${this.base}busdata/${String(code).padStart(2, '0')}.txt`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const pref = PREF_JA[code];
+        const list = (await res.text()).split('\n').filter(Boolean).map(row => {
+          const [name, ops, routes] = row.split('\t');
+          return { name, ops: ops || '', routes: routes || '', pref, n: normQ(name) };
+        });
+        this.data.set(code, list);
+        return list;
+      } catch (e) { this.failed.add(code); return []; }
+      finally { this.loading.delete(code); }
+    })();
+    this.loading.set(code, pr);
+    return pr;
+  },
+  /* 近い県から順に読み込む（同時に6つまで） */
+  async ensure(codes, first) {
+    const order = [...codes].sort((a, b) => (a === first ? -1 : 0) - (b === first ? -1 : 0));
+    let i = 0;
+    const worker = async () => { while (i < order.length) await this.load(order[i++]); };
+    await Promise.all(Array.from({ length: Math.min(6, order.length) }, worker));
+  },
+  search(qq, biasPref, n = 6) {
+    if (!qq) return [];
+    const out = [];
+    for (const code of this.codes()) {
+      const list = this.data.get(code);
+      if (!list) continue;
+      for (const st of list) {
+        let r = 9;
+        if (st.n === qq) r = 0;
+        else if (st.n.startsWith(qq)) r = 1;
+        else if (qq.length >= 2 && st.n.includes(qq)) r = 2;
+        else if (st.n.length >= 2 && qq.startsWith(st.n)) r = 3; // 「旭町一丁目」と打って「旭町」も出す
+        if (r === 9) continue;
+        out.push({ st, score: r + 0.4 + (biasPref && st.pref !== biasPref ? 1.5 : 0) });
+      }
+    }
+    out.sort((a, b) => a.score - b.score);
+    return out.slice(0, n).map(({ st, score }) => ({
+      id: `bus:${st.pref}:${st.name}`, name: st.name, pref: st.pref, provider: 'busstop', score, ops: st.ops,
+      sub: [st.ops, st.routes].filter(Boolean).join('　'), kinds: ['バス停']
+    }));
+  }
+};
+/* 都道府県の真ん中あたり */
+function prefCenter(pref) {
+  if (!StationIndex.list) return null;
+  let la = 0, lo = 0, n = 0;
+  for (const st of StationIndex.list) if (st.pref === pref) { la += st.lat; lo += st.lon; n++; }
+  return n ? { lat: la / n, lon: lo / n } : null;
+}
 /* 近いほど小さい（0〜2.5）。基準の場所がなければ 0 */
 function distScore(bias, p) {
   if (!bias || !p || !isFinite(p.lat) || !isFinite(p.lon)) return 0;
@@ -1851,7 +1919,15 @@ function makeStopInput(fieldEl, { role, getOther, onChange }) {
     const useIndex = apiId === 'transitous';
     if (useIndex) await StationIndex.load();
     if (my !== seq) return;
-    const local = [...(useIndex ? StationIndex.search(qq, bias, 8) : []), ...Hokutetsu.searchLocal(q, { bias })].sort((a, b) => a.score - b.score);
+    const biasPref = bias ? prefNear(bias.lat, bias.lon) : '';
+    const busCodes = useIndex ? BusStops.codes() : [];
+    if (useIndex && !BusStops.ready(busCodes)) {
+      // バス停のファイルを読み込んだら、もう一度並べ直す
+      BusStops.ensure(busCodes, PREF_JA.indexOf(biasPref)).then(() => { if (my === seq && input.value.trim() === q && !selected) run(); });
+    }
+    const hk = Hokutetsu.searchLocal(q, { bias });
+    const bus = useIndex ? BusStops.search(qq, biasPref, 6).filter(x => !(x.pref === '石川県' && hk.some(y => stopKey(y.name) === stopKey(x.name)))) : [];
+    const local = [...(useIndex ? StationIndex.search(qq, bias, 8) : []), ...hk, ...bus].sort((a, b) => a.score - b.score);
     if (local.length) { items = local.slice(0, 12); activeIdx = -1; renderItems(''); }
     else showMsg('検索中…');
     try {
@@ -1864,7 +1940,11 @@ function makeStopInput(fieldEl, { role, getOther, onChange }) {
       if (my !== seq) return;
       // 駅一覧と同じ駅（同じ名前で近いもの）は重ねない。名前が合わない候補（似た字の遠い場所）は出さない
       const same = (x, y) => stopKey(x.name) === stopKey(y.name) && (!isFinite(x.lat) || !isFinite(y.lat) || distM(x, y) < 1500);
-      const isBus = x => x.provider === 'hokutetsu' || (x.kinds || []).some(k => k === 'バス' || k === 'バス停');
+      const isBus = x => x.provider === 'hokutetsu' || x.provider === 'busstop' || (x.kinds || []).some(k => k === 'バス' || k === 'バス停');
+      const sameBus = (x, y) => y.provider === 'busstop' && stopKey(x.name) === stopKey(y.name) && (!x.pref || x.pref === y.pref);
+      // バス停の一覧と同じ名前の Transitous のバス停は、時刻を出せる Transitous のほうを残す
+      const dupBus = local.filter(y => remote.some(x => isBus(x) && sameBus(x, y)));
+      if (dupBus.length) for (const y of dupBus) local.splice(local.indexOf(y), 1);
       remote = remote.filter(x => inRegion(x.pref) && !local.some(y => same(x, y) && isBus(x) === isBus(y)))
         .map(x => ({ ...x, score: matchRank(qq, x.name) + distScore(bias, x) + 0.3 }))
         .filter(x => x.score < 9 || !local.length);
@@ -1926,6 +2006,9 @@ $('#swapBtn2').addEventListener('click', swapInputs);
 addBtn.addEventListener('click', async () => {
   let a = fromBox.value, b = toBox.value;
   if (!a || !b) { setAddMsg('出発と到着を、それぞれ候補から選んでください。', true); return; }
+  // バス停の一覧から選んだ北鉄の停留所は、アプリ内の北鉄の時刻表の停留所にそろえる
+  if (a.provider === 'busstop') a = asHokutetsu(a) || a;
+  if (b.provider === 'busstop') b = asHokutetsu(b) || b;
   // 片方が北鉄バスの停留所なら、もう片方も同じ名前の北鉄バス停（金沢駅など）として北鉄の時刻表を使う
   if ((a.provider === 'hokutetsu') !== (b.provider === 'hokutetsu')) {
     const hk = a.provider === 'hokutetsu' ? a : b, o = hk === a ? b : a;
@@ -1936,11 +2019,11 @@ addBtn.addEventListener('click', async () => {
     if (!Hokutetsu.pair(a.name, b.name)) { setAddMsg('この2つの停留所の間の時刻はアプリに入っていません。', true); return; }
   } else {
     // 北鉄バスの停留所や駅一覧の駅は、検索に使うデータ（Transitous など）の駅に置き換える
-    const pid = [a, b].find(s => s.provider !== 'hokutetsu' && s.provider !== 'station')?.provider || state.settings.provider;
+    const pid = [a, b].find(s => !['hokutetsu', 'station', 'busstop'].includes(s.provider))?.provider || state.settings.provider;
     addBtn.disabled = true; setAddMsg('駅を確認しています…');
     try { [a, b] = await Promise.all([resolveStop(pid, a), resolveStop(pid, b)]); }
-    catch (e) { setAddMsg(errText(e), true); updateAddBtn(); return; }
-    updateAddBtn();
+    catch (e) { addBtn.disabled = false; setAddMsg(errText(e), true); return; }
+    addBtn.disabled = false;
   }
   if (a.id === b.id) { setAddMsg('出発と到着が同じです。', true); return; }
   const kindEl = document.querySelector('input[name=addKind]:checked');
@@ -1954,6 +2037,7 @@ const KIND_JA = { go: '行き', back: '帰り' };
 function asHokutetsu(st) {
   if (!Hokutetsu.ready() || !st) return null;
   const key = stopKey(st.name);
+  if (st.pref && st.pref !== '石川県') return null;
   for (const hs of HOKUTETSU.stops) {
     if (stopKey(hs.name) !== key) continue;
     const pos = HK_POS[hs.name];
@@ -1968,7 +2052,14 @@ async function resolveStop(pid, st) {
   const key = stopKey(nm), strip = stopKey;
   if (pid === 'transitous') {
     let cands = [];
-    try { cands = await Transitous.searchStops(nm, { near: st }); } catch (e) { if (!isFinite(st.lat)) throw e; }
+    const near = isFinite(st.lat) ? st : (st.pref ? prefCenter(st.pref) : null);
+    try { cands = await Transitous.searchStops(nm, { near }); } catch (e) { if (!isFinite(st.lat)) throw e; }
+    if (st.provider === 'busstop') {
+      const hit = cands.find(c => strip(c.name) === key && (c.kinds || []).includes('バス') && (!c.pref || c.pref === st.pref));
+      if (hit) return { id: hit.id, name: st.name, sub: st.sub || '', lat: hit.lat, lon: hit.lon, provider: pid };
+      if (/北鉄|北陸鉄道/.test(st.ops || '')) throw new AppError('notfound', `「${st.name}」の北鉄バスの時刻はまだアプリに入っていません（入っているのは金沢大学自然研前・金沢駅・香林坊などの間だけです）。`);
+      throw new AppError('notfound', `「${st.name}」（${st.ops || 'バス'}）の時刻データが見つかりませんでした。`);
+    }
     const rail = c => (c.kinds || []).some(k => k !== 'バス');
     const same = cands.filter(c => strip(c.name) === key && (!isFinite(st.lat) || (isFinite(c.lat) && distM(c, st) < 2000)))
       .sort((x, y) => (rail(y) - rail(x)) || (isFinite(st.lat) ? distM(x, st) - distM(y, st) : 0));
@@ -2134,6 +2225,7 @@ function renderFooter() {
   if (Hokutetsu.ready()) parts.push(['北鉄バスの時刻：', h('a', { href: HOKUTETSU.url, target: '_blank', rel: 'noopener noreferrer', text: '北陸鉄道 時刻・運賃検索' }), `（${HOKUTETSU.revLabel}）から収録`]);
   if (used.has('demo')) parts.push('デモ表示は架空のデータです');
   parts.push(['新幹線の番線：', h('a', { href: 'https://timetable.jr-odekake.net/', target: '_blank', rel: 'noopener noreferrer', text: 'JR西日本 駅時刻表' })]);
+  parts.push(['バス停：', h('a', { href: 'https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P11-v3_0.html', target: '_blank', rel: 'noopener noreferrer', text: '国土数値情報（バス停留所データ）' }), '（国土交通省、2022年）を加工']);
   if (STATIONS_GZ) parts.push(['駅名のよみ・位置：', h('a', { href: 'https://github.com/TrainLCD/StationAPI', target: '_blank', rel: 'noopener noreferrer', text: 'TrainLCD StationAPI' }), '（MIT License）']);
   parts.forEach((p, i) => { if (i) src.append(' ／ '); src.append(...[p].flat()); });
   f.append(src);
