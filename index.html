@@ -1495,15 +1495,12 @@ function renderCard(id) {
     res.fetchedAt ? h('span', { text: hm(new Date(res.fetchedAt)) + ' 取得' }) : null,
     busy ? h('span', { text: '更新中…' }) : null);
   card.className = 'card' + (route.kind === 'go' ? ' kind-go' : route.kind === 'back' ? ' kind-back' : '');
-  const pred = orderedRoutes().p;
   const isPinned = pinnedId === route.id;
-  const isPick = !isPinned && !pinnedId && !!(pred.mode && route.kind && route.kind === pred.mode);
   const head = h('header', { class: 'card-head' },
     h('div', null,
-      (route.kind || route.label || isPick || isPinned) ? h('div', { class: 'card-label' },
+      (route.kind || route.label || isPinned) ? h('div', { class: 'card-label' },
         isPinned ? [h('span', { class: 'kind-chip pin', text: '選択中' }), h('button', { class: 'unpin', type: 'button', onclick: () => pinRoute(route.id), text: '解除' })] : null,
         route.kind ? h('span', { class: 'kind-chip ' + route.kind, text: KIND_JA[route.kind] }) : null,
-        isPick ? h('span', { class: 'kind-chip pick', text: 'おすすめ' }) : null,
         route.label || '') : null,
       h('h2', { class: 'route-title', id: 'title-' + id, style: 'margin:0' },
         h('span', { text: route.from.name }), h('span', { class: 'arrow', 'aria-label': 'から', text: '→' }), h('span', { text: route.to.name })),
