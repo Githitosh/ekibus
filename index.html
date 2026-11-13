@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   駅・バス時刻確認アプリ
-  作成日時：2026年11月12日 22:22（JST）／更新：2026年11月13日（北鉄バス時刻表・時刻指定・番線・送る機能）
+  作成日時：2026年11月12日 22:22（JST）／更新：2026年11月13日（北鉄バス時刻表・新幹線の番線・送る機能）
   1ファイルで動くWebアプリです。登録内容はこのブラウザの localStorage に保存されます。
   License: MIT（Transitous の利用方針に合わせ、ソースは自由に公開・改変できます）
 -->
@@ -254,6 +254,7 @@ a.btn{display:inline-flex;align-items:center;text-decoration:none}
 .notice{border:1px solid var(--warn-line);background:var(--warn-bg);border-radius:10px;padding:8px 12px;font-size:14px;margin-bottom:8px}
 
 .track.none{color:var(--text-3);border-style:dashed}
+.track.usual{color:var(--text);border-style:solid}
 
 /* ---------- 行き・帰りの色分け ---------- */
 .card.kind-go{border-top:4px solid var(--go)}
@@ -288,6 +289,7 @@ a.btn{display:inline-flex;align-items:center;text-decoration:none}
 .place-val{font-size:13px;color:var(--text-3)}
 .dep-track{font-weight:600;color:var(--text)}
 .dep-track.none{font-weight:400;color:var(--text-3)}
+.dep-track.usual{font-weight:600;color:var(--text)}
 
 /* ---------- フッター ---------- */
 footer{max-width:1200px;margin:0 auto;padding:12px calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 28px) calc(env(safe-area-inset-left) + 16px);font-size:13px;color:var(--text-3);line-height:1.75}
@@ -844,6 +846,7 @@ function makeTrip({ legs, start, end, transfers, flags = [] }) {
   const key = dep.toISOString() + '|' + transit.map(l => l.name).join('>') + '|' + (arrv ? arrv.toISOString() : '');
   if (transit.some(l => l.cancelled)) flags.push({ text: '運休を含む', warn: true });
   if (transit.some(l => l.delayMin > 0)) flags.push({ text: '遅れあり', warn: true });
+  for (const leg of legs) applyKnownTrack(leg);
   return { dep, arr: arrv, start: s, end: e, durationMin, transfers: tr, legs, key, flags };
 }
 function dedupeTrips(trips) {
@@ -954,6 +957,84 @@ function trackFrom(stop, mode) {
   if (t) return trackText(t, mode);
   const m = zen2han(String(stop.name || '')).match(/(\d+)\s*番(線|ホーム|のりば|乗り場)/);
   return m ? m[1] + (m[2] === '線' || m[2] === 'ホーム' ? '番線' : '番のりば') : '';
+}
+/* 新幹線の番線。JR西日本「駅時刻表」2026-11-13〜2026-12-26（金沢・富山・敦賀）。
+   文字列ならその期間は毎日同じ番線。オブジェクトなら日付（YYYYMMDD）ごとの番線。 */
+const JR_TRACK = {"from":"20261113","to":"20261226","src":"https://timetable.jr-odekake.net/","stations":{"金沢":{"かがやき500号":"11","かがやき501号":"13","かがやき502号":"12","かがやき503号":"13","かがやき504号":"12","かがやき505号":"13","かがやき506号":"12","かがやき507号":"13","かがやき508号":"12","かがやき509号":"13","かがやき510号":"12","かがやき511号":"13","かがやき512号":"12","かがやき513号":"14","かがやき514号":"12","かがやき515号":"13","かがやき516号":"12","かがやき517号":"13","かがやき518号":"12","かがやき520号":"11","かがやき522号":{"20261114":"12","20261115":"14","20261121":"12","20261128":"14","20261205":"14","20261212":"14","20261219":"14","20261226":"14"},"かがやき524号":{"20261113":"12","20261120":"12","20261127":"12","20261128":"12","20261205":"11","20261212":"11","20261219":"12","20261225":"11","20261226":"12"},"かがやき526号":{"20261114":"12","20261121":"12","20261122":"12","20261123":"14","20261226":"14"},"かがやき527号":"13","かがやき528号":"11","かがやき529号":"14","かがやき530号":"11","かがやき532号":"12","かがやき534号":"11","かがやき536号":"11","かがやき538号":{"20261113":"11","20261114":"11","20261115":"11","20261119":"11","20261120":"11","20261121":"11","20261122":"11","20261123":"11","20261127":"11","20261129":"11","20261206":"11","20261213":"11","20261220":"11","20261225":"14","20261226":"14"},"かがやき542号":"11","かがやき543号":"14","かがやき544号":"12","かがやき547号":"13","かがやき548号":"12","かがやき549号":"13","かがやき580号":"11","かがやき582号":"11","かがやき585号":"13","かがやき592号":"12","つるぎ10号":"11","つるぎ11号":"13","つるぎ13号":"13","つるぎ14号":"12","つるぎ15号":"14","つるぎ16号":"12","つるぎ17号":"13","つるぎ19号":"14","つるぎ1号":"14","つるぎ20号":"12","つるぎ21号":"13","つるぎ22号":"12","つるぎ23号":"13","つるぎ25号":"13","つるぎ26号":"12","つるぎ27号":"14","つるぎ28号":"12","つるぎ29号":"13","つるぎ2号":"12","つるぎ30号":"11","つるぎ31号":"13","つるぎ33号":"13","つるぎ34号":"12","つるぎ35号":"13","つるぎ36号":"12","つるぎ37号":"13","つるぎ39号":"13","つるぎ3号":"13","つるぎ40号":"12","つるぎ41号":"14","つるぎ42号":"12","つるぎ43号":"14","つるぎ45号":"13","つるぎ46号":"12","つるぎ47号":"13","つるぎ48号":"12","つるぎ49号":"14","つるぎ4号":"12","つるぎ50号":"12","つるぎ5号":"13","つるぎ60号":"11","つるぎ61号":"13","つるぎ62号":"11","つるぎ6号":"11","つるぎ79号":"13","つるぎ7号":"13","つるぎ83号":"13","つるぎ85号":"14","つるぎ8号":"12","つるぎ91号":"14","つるぎ94号":"12","つるぎ9号":"13","はくたか552号":"12","はくたか553号":"13","はくたか554号":"12","はくたか556号":"11","はくたか558号":"12","はくたか559号":"14","はくたか560号":"12","はくたか561号":"13","はくたか562号":"11","はくたか563号":"13","はくたか564号":"12","はくたか565号":"13","はくたか566号":"12","はくたか567号":"13","はくたか568号":"12","はくたか569号":"13","はくたか570号":"11","はくたか572号":"11","はくたか574号":"12","はくたか576号":"11","はくたか578号":{"20261113":"12","20261114":"12","20261115":"14","20261116":"12","20261117":"12","20261118":"12","20261119":"12","20261120":"12","20261121":"12","20261122":"14","20261123":"14","20261124":"12","20261125":"12","20261126":"12","20261127":"12","20261128":"12","20261129":"12","20261130":"12","20261201":"12","20261202":"12","20261203":"12","20261204":"12","20261205":"12","20261206":"12","20261207":"12","20261208":"12","20261209":"12","20261210":"12","20261211":"12","20261212":"12","20261213":"12","20261214":"12","20261215":"12","20261216":"12","20261217":"12","20261218":"12","20261219":"12","20261220":"12","20261221":"12","20261222":"12","20261223":"12","20261224":"12","20261225":"12","20261226":"12"},"はくたか590号":"11","はくたか624号":"12","はくたか639号":"14","はくたか660号":"14","はくたか662号":{"20261206":"14","20261213":"14","20261220":"14","20261226":"12"},"はくたか665号":"14","はくたか668号":"12"},"敦賀":{"かがやき502号":"14","かがやき504号":"12","かがやき506号":"12","かがやき508号":{"20261113":"13","20261114":"12","20261115":"13","20261116":"13","20261117":"13","20261118":"13","20261119":"13","20261120":"13","20261121":"12","20261122":"12","20261123":"13","20261124":"13","20261125":"13","20261126":"13","20261127":"13","20261128":"13","20261129":"13","20261130":"13","20261201":"13","20261202":"13","20261203":"13","20261204":"13","20261205":"13","20261206":"13","20261207":"13","20261208":"13","20261209":"13","20261210":"13","20261211":"13","20261212":"13","20261213":"13","20261214":"13","20261215":"13","20261216":"13","20261217":"13","20261218":"13","20261219":"13","20261220":"13","20261221":"13","20261222":"13","20261223":"13","20261224":"13","20261225":"13","20261226":"13"},"かがやき510号":"14","かがやき512号":"14","かがやき514号":"14","かがやき516号":"14","かがやき518号":"13","かがやき520号":"12","かがやき522号":"13","かがやき524号":"12","かがやき526号":"14","かがやき538号":{"20261113":"13","20261114":"13","20261115":"13","20261119":"13","20261120":"13","20261121":"13","20261122":"13","20261123":"12","20261127":"13","20261129":"13","20261206":"12","20261213":"12","20261220":"12"},"かがやき542号":"12","かがやき582号":"12","つるぎ10号":"12","つるぎ12号":"13","つるぎ14号":"11","つるぎ16号":"12","つるぎ18号":"12","つるぎ20号":"11","つるぎ22号":"11","つるぎ24号":"12","つるぎ26号":"11","つるぎ28号":"11","つるぎ2号":"13","つるぎ30号":"12","つるぎ32号":"11","つるぎ34号":"12","つるぎ36号":"13","つるぎ38号":"11","つるぎ40号":"13","つるぎ42号":"12","つるぎ44号":"11","つるぎ46号":"12","つるぎ48号":"12","つるぎ4号":"11","つるぎ50号":"12","つるぎ62号":"12","つるぎ64号":"11","つるぎ6号":{"20261113":"14","20261114":"13","20261115":"12","20261116":"12","20261117":"12","20261118":"12","20261119":"12","20261120":"14","20261121":"13","20261122":"13","20261123":"12","20261124":"12","20261125":"12","20261126":"12","20261127":"14","20261128":"14","20261129":"12","20261130":"12","20261201":"12","20261202":"12","20261203":"12","20261204":"12","20261205":"12","20261206":"12","20261207":"12","20261208":"12","20261209":"12","20261210":"12","20261211":"12","20261212":"12","20261213":"12","20261214":"12","20261215":"12","20261216":"12","20261217":"12","20261218":"12","20261219":"14","20261220":"12","20261221":"12","20261222":"12","20261223":"12","20261224":"12","20261225":"12","20261226":"14"},"つるぎ86号":"12","つるぎ88号":"12","つるぎ8号":"11","つるぎ90号":{"20261115":"12","20261123":"12","20261129":"12","20261206":"13","20261213":"13","20261220":"13"},"つるぎ94号":"11","はくたか560号":"13","はくたか562号":"14","はくたか564号":{"20261113":"12","20261114":"14","20261115":"12","20261116":"12","20261117":"12","20261118":"12","20261119":"12","20261120":"12","20261121":"14","20261122":"12","20261123":"12","20261124":"12","20261125":"12","20261126":"12","20261127":"12","20261128":"14","20261129":"12","20261130":"12","20261201":"12","20261202":"12","20261203":"12","20261204":"12","20261205":"12","20261206":"12","20261207":"12","20261208":"12","20261209":"12","20261210":"12","20261211":"12","20261212":"12","20261213":"12","20261214":"12","20261215":"12","20261216":"12","20261217":"12","20261218":"12","20261219":"12","20261220":"12","20261221":"12","20261222":"12","20261223":"12","20261224":"12","20261225":"12","20261226":"12"},"はくたか566号":"13","はくたか568号":"14","はくたか662号":"14","はくたか668号":"14"},"富山":{"かがやき500号":"12","かがやき501号":"13","かがやき502号":"12","かがやき503号":"13","かがやき504号":"12","かがやき505号":"13","かがやき506号":"12","かがやき507号":"13","かがやき508号":"12","かがやき509号":"13","かがやき510号":"12","かがやき511号":"13","かがやき512号":"12","かがやき513号":"13","かがやき514号":"12","かがやき515号":"13","かがやき516号":"12","かがやき517号":"13","かがやき518号":"12","かがやき519号":"13","かがやき520号":"12","かがやき521号":"13","かがやき522号":"12","かがやき523号":"13","かがやき524号":"12","かがやき525号":"13","かがやき526号":"12","かがやき527号":"13","かがやき528号":"12","かがやき529号":"13","かがやき530号":"11","かがやき531号":"13","かがやき532号":"12","かがやき533号":"13","かがやき534号":"12","かがやき536号":"12","かがやき537号":"13","かがやき538号":"12","かがやき539号":"13","かがやき541号":"13","かがやき542号":"11","かがやき543号":"13","かがやき544号":"11","かがやき547号":"13","かがやき548号":"12","かがやき549号":"13","かがやき580号":"12","かがやき581号":"13","かがやき582号":"11","かがやき585号":"13","かがやき592号":"12","つるぎ11号":"13","つるぎ13号":"14","つるぎ17号":"14","つるぎ21号":"14","つるぎ23号":"13","つるぎ25号":"13","つるぎ29号":"14","つるぎ33号":"13","つるぎ37号":"13","つるぎ39号":"13","つるぎ3号":"14","つるぎ43号":"13","つるぎ45号":"14","つるぎ47号":"14","つるぎ49号":"13","つるぎ5号":"13","つるぎ61号":"14","つるぎ63号":"14","つるぎ7号":"14","つるぎ91号":"14","つるぎ9号":"14","はくたか551号":"13","はくたか552号":"12","はくたか553号":"13","はくたか554号":"12","はくたか555号":"13","はくたか556号":"12","はくたか557号":"13","はくたか558号":"12","はくたか559号":"13","はくたか560号":"12","はくたか561号":"13","はくたか562号":"12","はくたか563号":"13","はくたか564号":"12","はくたか565号":"13","はくたか566号":"12","はくたか567号":"13","はくたか568号":"12","はくたか569号":"13","はくたか570号":"12","はくたか571号":"13","はくたか572号":"12","はくたか573号":"13","はくたか574号":"12","はくたか575号":"13","はくたか576号":"12","はくたか577号":"13","はくたか578号":"12","はくたか590号":"12","はくたか591号":"13","はくたか595号":"13","はくたか624号":"12","はくたか639号":"14","はくたか643号":{"20261122":"14","20261123":"14","20261226":"13"},"はくたか645号":"13","はくたか660号":"12","はくたか661号":"13","はくたか662号":"12","はくたか663号":"13","はくたか665号":"13","はくたか667号":"13","はくたか668号":"11"}}};
+function stationKey(name) {
+  return String(name || '').replace(/\s/g, '').replace(/駅$/, '');
+}
+function trainKey(name) {
+  return zen2han(String(name || '')).replace(/（[^）]*）|\([^)]*\)/g, '').replace(/\s/g, '');
+}
+function jpYmd(date) {
+  if (!date) return '';
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date).replace(/-/g, '');
+  } catch (e) { return ''; }
+}
+function jrTrack(station, train, when) {
+  const st = JR_TRACK.stations[stationKey(station)];
+  if (!st) return null;
+  const row = st[trainKey(train)];
+  if (row == null) return null;
+  const ymd = jpYmd(when);
+  if (typeof row === 'string') {
+    if (ymd && (ymd < JR_TRACK.from || ymd > JR_TRACK.to)) return { no: row, kind: 'usual' };
+    return { no: row, kind: 'timetable' };
+  }
+  if (ymd && row[ymd]) return { no: String(row[ymd]), kind: 'timetable' };
+  return null;
+}
+function rangeTrack(station, toward) {
+  const st = stationKey(station);
+  const dir = String(toward || '');
+  if (st === '金沢') {
+    if (/福井|敦賀|小松|加賀|大聖寺|松任|野々市|美川|動橋|芦原|武生|鯖江/.test(dir)) return '1・2番線';
+    if (/富山|高岡|津幡|東金沢|森本|石動|泊|魚津|黒部|糸魚川|七尾|羽咋|和倉|能登|高松|宇野気/.test(dir)) return '3〜7番線';
+  }
+  if (st === '富山') {
+    if (/高山|猪谷|越中八尾|速星/.test(dir)) return '1〜3番線';
+    if (/魚津|泊|糸魚川|黒部|滑川|入善|生地/.test(dir)) return '4・5番線';
+    if (/金沢|高岡|新高岡|石動|小杉|呉羽|福岡/.test(dir)) return '1・3番線';
+  }
+  if (st === '北鉄金沢') return '1番線';
+  return '';
+}
+function fillTrack(place, trains, toward, when, mode) {
+  if (!place || place.track) return;
+  for (const train of trains) {
+    const exact = jrTrack(place.name, train, when);
+    if (exact) { place.track = exact.no + '番線'; place.trackKind = exact.kind; return; }
+  }
+  if (mode === '新幹線' || trains.some(t => /かがやき|はくたか|つるぎ/.test(trainKey(t)))) return;
+  const range = rangeTrack(place.name, toward);
+  if (range) { place.track = range; place.trackKind = 'range'; }
+}
+function applyKnownTrack(leg) {
+  if (!leg || leg.kind !== 'transit' || !isTrainMode(leg.mode)) return;
+  const trains = [leg.name, leg.nameSub].filter(Boolean);
+  const toward = [leg.headsign, leg.to && leg.to.name, leg.name].filter(Boolean).join(' ');
+  const back = [leg.headsign, leg.from && leg.from.name, leg.name].filter(Boolean).join(' ');
+  fillTrack(leg.from, trains, toward, leg.from && leg.from.time, leg.mode);
+  fillTrack(leg.to, trains, back, leg.to && (leg.to.time || (leg.from && leg.from.time)), leg.mode);
+}
+function trackLabel(place, verb) {
+  if (!place || !place.track) return '';
+  if (place.trackKind === 'range') return '通常 ' + place.track;
+  if (place.trackKind === 'usual') return '通常 ' + place.track + ' ' + verb;
+  return place.track + ' ' + verb;
+}
+function trackClass(place, base) {
+  if (!place || !place.track) return base + ' none';
+  if (place.trackKind === 'range' || place.trackKind === 'usual') return base + ' usual';
+  return base;
+}
+function trackTitle(place) {
+  if (!place || !place.track) return '';
+  if (place.trackKind === 'range') return '公式のりば案内の範囲です。この列車の番線は駅の発車案内で確認してください。';
+  if (place.trackKind === 'usual') return '収録期間のJR駅時刻表では同じ番線です。当日の案内と違うことがあります。';
+  return 'JR西日本の駅時刻表（2026年11月13日〜12月26日）';
 }
 function lineNames(lg) {
   const clean = s => String(s || '').trim();
@@ -1436,7 +1517,7 @@ function stateBox(kind, title, text, retry) {
 /* 番線・のりばの表示（電車で情報がないときもそう書く） */
 function depTrackText(l) {
   if (!l) return '';
-  if (l.from.track) return l.from.track + ' 発';
+  if (l.from && l.from.track) return trackLabel(l.from, '発');
   return isTrainMode(l.mode) ? '番線データなし' : '';
 }
 function tripItem(routeId, t, isBest, now) {
@@ -1457,7 +1538,7 @@ function tripItem(routeId, t, isBest, now) {
     lines.append(h('span', { text: nm }));
     if (k === 0 && l.headsign) lines.append(h('span', { style: 'color:#4A4F55;font-size:14px', text: '（' + l.headsign + '）' }));
     // 乗り換えた先の電車も、何番線から出るかを書く
-    if (k > 0 && isTrainMode(l.mode)) lines.append(h('span', { class: 'track' + (l.from.track ? '' : ' none'), style: 'margin-left:4px', text: depTrackText(l) }));
+    if (k > 0 && isTrainMode(l.mode)) lines.append(h('span', { class: trackClass(l.from, 'track'), style: 'margin-left:4px', title: trackTitle(l.from), text: depTrackText(l) }));
   });
 
   const detKey = routeId + '|' + t.key;
@@ -1475,7 +1556,7 @@ function tripItem(routeId, t, isBest, now) {
         h('span', { class: 'arr-time', text: '→ ' + hm(t.arr) + ' 着' })),
       showUntil ? h('span', { class: 'until' + (soon ? ' soon' : ''), dataset: { dep: String(t.dep.getTime()) }, text: untilText(t.dep, now) }) : null),
     h('div', { class: 'trip-sub' }, subParts.filter(Boolean).map((s, k) => [k ? h('span', { class: 'sep', 'aria-hidden': 'true', text: '·' }) : null, s]),
-      firstTrack ? [h('span', { class: 'sep', 'aria-hidden': 'true', text: '·' }), h('span', { class: first.from.track ? 'dep-track' : 'dep-track none', text: firstTrack })] : null),
+      firstTrack ? [h('span', { class: 'sep', 'aria-hidden': 'true', text: '·' }), h('span', { class: trackClass(first.from, 'dep-track'), title: trackTitle(first.from), text: firstTrack })] : null),
     lines,
     t.flags && t.flags.length ? h('div', { class: 'trip-flags' }, t.flags.map(f => h('span', { class: 'flag' + (f.warn ? ' warn' : ''), text: f.text }))) : null,
     details);
@@ -1497,9 +1578,9 @@ function legList(t) {
         l.cancelled ? h('span', { class: 'flag warn', style: 'margin-left:6px', text: '運休' }) : null),
       l.headsign ? h('div', { class: 'leg-hs', text: l.headsign }) : null,
       h('div', { class: 'leg-stop' }, h('span', { class: 'lt', text: hm(l.from.time) + ' 発' }), h('span', { class: 'st', text: l.from.name }),
-        l.from.track ? h('span', { class: 'track', text: l.from.track + ' 発' }) : (isTrainMode(l.mode) ? h('span', { class: 'track none', text: '番線データなし（駅の案内で確認）' }) : null), delay),
+        l.from.track ? h('span', { class: trackClass(l.from, 'track'), title: trackTitle(l.from), text: trackLabel(l.from, '発') }) : (isTrainMode(l.mode) ? h('span', { class: 'track none', text: '番線データなし（駅の案内で確認）' }) : null), delay),
       l.alt ? h('div', { class: 'leg-namesub', style: 'margin:2px 0 0 3.6em', text: l.alt }) : null,
-      h('div', { class: 'leg-stop' }, h('span', { class: 'lt', text: hm(l.to.time) + ' 着' }), h('span', { class: 'st', text: l.to.name }), l.to.track ? h('span', { class: 'track', text: l.to.track + ' 着' }) : null,
+      h('div', { class: 'leg-stop' }, h('span', { class: 'lt', text: hm(l.to.time) + ' 着' }), h('span', { class: 'st', text: l.to.name }), l.to.track ? h('span', { class: trackClass(l.to, 'track'), title: trackTitle(l.to), text: trackLabel(l.to, '着') }) : null,
         l.stops != null && l.stops >= 0 ? h('span', { class: 'leg-namesub', text: `途中${l.stops}駅・停留所` }) : null),
       (l.agency || l.agencyUrl) ? h('div', { class: 'leg-agency' }, l.agency || '',
         l.agencyUrl ? [' ', h('a', { href: l.agencyUrl, target: '_blank', rel: 'noopener noreferrer', text: '事業者の公式サイト' })] : null) : null));
@@ -1800,6 +1881,7 @@ function renderFooter() {
   if (used.has('ekispert')) parts.push(['Powered by ', h('a', { href: 'https://api-info.ekispert.com/', target: '_blank', rel: 'noopener noreferrer', text: '駅すぱあと API' }), '（株式会社ヴァル研究所）']);
   if (Hokutetsu.ready()) parts.push(['北鉄バスの時刻：', h('a', { href: HOKUTETSU.url, target: '_blank', rel: 'noopener noreferrer', text: '北陸鉄道 時刻・運賃検索' }), `（${HOKUTETSU.revLabel}）から収録`]);
   if (used.has('demo')) parts.push('デモ表示は架空のデータです');
+  parts.push(['新幹線の番線：', h('a', { href: 'https://timetable.jr-odekake.net/', target: '_blank', rel: 'noopener noreferrer', text: 'JR西日本 駅時刻表' }), '（2026年11月13日〜12月26日、金沢・富山・敦賀）。在来線の「通常」は公式のりば案内の範囲で、列車ごとに変わります']);
   parts.forEach((p, i) => { if (i) src.append(' ／ '); src.append(...[p].flat()); });
   f.append(src);
   if (APP.repo) f.append(h('p', null, 'ソースコード・連絡先：', h('a', { href: APP.repo, target: '_blank', rel: 'noopener noreferrer', text: APP.repo.replace(/^https:\/\//, '') }), '（MIT License）'));
