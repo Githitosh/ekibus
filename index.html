@@ -352,6 +352,8 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
 .opt-title{font-weight:600;display:block}
 .opt-desc{font-size:13.5px;color:var(--text-2);line-height:1.6;display:block;margin-top:2px}
 .set-block{margin-top:16px}
+.set-block.set-first{margin-top:0;padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid var(--line)}
+.set-first .place-row:first-of-type{border-top:0;padding-top:4px}
 .set-note{font-size:13px;color:var(--text-3);margin-top:6px;line-height:1.6}
 .key-row{display:flex;gap:8px}
 .key-row .input{flex:1}
@@ -501,6 +503,38 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
       </button>
     </div>
     <div class="dlg-body">
+      <div class="set-block set-first">
+        <div class="place-row">
+          <div class="place-name">自宅（<span id="homeVal">未設定</span>）</div>
+          <div class="share-actions"><button class="btn btn-small" type="button" id="setHome">今いる場所を自宅にする</button><button class="btn btn-small" type="button" id="clearHome">消す</button></div>
+          <div class="field place-search" id="homeSearch" data-key="home">
+            <label class="sr-only" for="homeInput">自宅を住所・駅名で探す</label>
+            <input class="input" id="homeInput" type="text" autocomplete="off" enterkeyhint="search" placeholder="最寄駅名・住所（例：森本）" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="homeList">
+            <ul class="ac-list" id="homeList" role="listbox" hidden></ul>
+            <div class="place-chips" id="homeChips"></div>
+          </div>
+        </div>
+        <div class="place-row">
+          <div class="place-name">職場（<span id="workVal">未設定</span>）</div>
+          <div class="share-actions"><button class="btn btn-small" type="button" id="setWork">今いる場所を職場にする</button><button class="btn btn-small" type="button" id="clearWork">消す</button></div>
+          <div class="field place-search" id="workSearch" data-key="work">
+            <label class="sr-only" for="workInput">職場を住所・駅名で探す</label>
+            <input class="input" id="workInput" type="text" autocomplete="off" enterkeyhint="search" placeholder="最寄駅名・住所（例：森本）" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="workList">
+            <ul class="ac-list" id="workList" role="listbox" hidden></ul>
+            <div class="place-chips" id="workChips"></div>
+          </div>
+        </div>
+        <p class="set-note" id="placeMsg" role="status" aria-live="polite"></p>
+        <label class="opt" style="margin-top:12px">
+          <input type="checkbox" id="useGps">
+          <span class="opt-text"><span class="opt-title">現在地で出勤・帰宅を予想して並べる</span></span>
+        </label>
+        <label class="set-label" for="radiusSel" style="margin-top:10px">「近く」とみなす距離</label>
+        <select class="input" id="radiusSel">
+          <option value="300">300 m</option><option value="500">500 m</option><option value="1000">1 km</option><option value="2000">2 km</option><option value="5000">5 km</option>
+        </select>
+      </div>
+
       <fieldset>
         <legend>検索に使うデータ</legend>
         <label class="opt">
@@ -545,39 +579,6 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
       <div class="set-block">
         <label class="set-label" for="contactInput">連絡先（任意）</label>
         <input class="input" id="contactInput" type="text" autocomplete="off" placeholder="メールアドレスやWebサイトのURL">
-      </div>
-
-      <div class="set-block">
-        <span class="set-label">自宅・職場</span>
-        <label class="opt" style="margin-top:0">
-          <input type="checkbox" id="useGps">
-          <span class="opt-text"><span class="opt-title">現在地で出勤・帰宅を予想して並べる</span></span>
-        </label>
-        <div class="place-row">
-          <div class="place-name">自宅（<span id="homeVal">未設定</span>）</div>
-          <div class="share-actions"><button class="btn btn-small" type="button" id="setHome">今いる場所を自宅にする</button><button class="btn btn-small" type="button" id="clearHome">消す</button></div>
-          <div class="field place-search" id="homeSearch" data-key="home">
-            <label class="sr-only" for="homeInput">自宅を住所・駅名で探す</label>
-            <input class="input" id="homeInput" type="text" autocomplete="off" enterkeyhint="search" placeholder="最寄駅名・住所（例：森本）" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="homeList">
-            <ul class="ac-list" id="homeList" role="listbox" hidden></ul>
-            <div class="place-chips" id="homeChips"></div>
-          </div>
-        </div>
-        <div class="place-row">
-          <div class="place-name">職場（<span id="workVal">未設定</span>）</div>
-          <div class="share-actions"><button class="btn btn-small" type="button" id="setWork">今いる場所を職場にする</button><button class="btn btn-small" type="button" id="clearWork">消す</button></div>
-          <div class="field place-search" id="workSearch" data-key="work">
-            <label class="sr-only" for="workInput">職場を住所・駅名で探す</label>
-            <input class="input" id="workInput" type="text" autocomplete="off" enterkeyhint="search" placeholder="最寄駅名・住所（例：森本）" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="workList">
-            <ul class="ac-list" id="workList" role="listbox" hidden></ul>
-            <div class="place-chips" id="workChips"></div>
-          </div>
-        </div>
-        <label class="set-label" for="radiusSel" style="margin-top:10px">「近く」とみなす距離</label>
-        <select class="input" id="radiusSel">
-          <option value="300">300 m</option><option value="500">500 m</option><option value="1000">1 km</option><option value="2000">2 km</option><option value="5000">5 km</option>
-        </select>
-        <p class="set-note" id="placeMsg" role="status" aria-live="polite"></p>
       </div>
 
       <div class="danger-zone">
@@ -753,7 +754,7 @@ const DAYTYPE_JA = ['平日', '土曜', '日曜・祝日'];
 const DOW_JA = ['日', '月', '火', '水', '木', '金', '土'];
 
 /* ---------- 保存（localStorage） ---------- */
-const DEFAULT_SETTINGS = { provider: 'transitous', ekispertKey: '', perRoute: 4, maxTransfers: '', contact: '', campusBreak: false, useGps: false, home: null, work: null, radius: 1000 };
+const DEFAULT_SETTINGS = { provider: 'transitous', ekispertKey: '', perRoute: 3, maxTransfers: '', contact: '', campusBreak: false, useGps: false, home: null, work: null, radius: 1000 };
 const state = { settings: { ...DEFAULT_SETTINGS }, routes: [] };
 let storageOK = true;
 function storageAvailable() {
@@ -772,7 +773,7 @@ function loadState() {
     }
   } catch { /* 壊れたデータは無視 */ }
   if (!PROVIDERS[state.settings.provider]) state.settings.provider = 'transitous';
-  state.settings.perRoute = Math.min(8, Math.max(2, parseInt(state.settings.perRoute, 10) || 4));
+  state.settings.perRoute = Math.min(8, Math.max(2, parseInt(state.settings.perRoute, 10) || 3));
 }
 function saveState() {
   if (!storageOK) return false;
@@ -1999,7 +2000,7 @@ $('#settingsForm').addEventListener('submit', e => {
     ...state.settings,
     provider: checked ? checked.value : state.settings.provider,
     ekispertKey: $('#keyInput').value.trim(),
-    perRoute: parseInt($('#countSel').value, 10) || 4,
+    perRoute: parseInt($('#countSel').value, 10) || 3,
     maxTransfers: $('#xferSel').value,
     contact: $('#contactInput').value.trim(),
     useGps: $('#useGps').checked,
