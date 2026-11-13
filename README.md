@@ -15,6 +15,7 @@
 
 ## データ
 - [Transitous](https://transitous.org/)（[データ提供元](https://transitous.org/sources/)、地図データ © OpenStreetMap contributors）
+- 駅名のよみ・位置（ひらがな検索用）：[TrainLCD StationAPI](https://github.com/TrainLCD/StationAPI) の駅データ（© TinyKitten, MIT License）を加工
 - 駅すぱあと API（利用者が自分のアクセスキーを設定した場合）
 - 北鉄バス：[北陸鉄道 時刻・運賃検索](https://arj.hokutetsu.co.jp/timetable/pathway.php)（令和8年10月1日改正）から収録
 
