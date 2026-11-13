@@ -307,7 +307,7 @@ a.btn{display:inline-flex;align-items:center;text-decoration:none}
 .predict .seg-btn{font-size:14px;min-height:38px}
 .predict .p-actions{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
 .place-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line-2)}
-.place-name{font-weight:600}
+.place-name{font-weight:600;overflow-wrap:anywhere}
 .place-val{font-size:13px;color:var(--text-3)}
 .place-search{flex-basis:100%}
 .place-search .ac-list{position:static;box-shadow:none;max-height:none;margin-top:6px}
@@ -554,7 +554,7 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
           <span class="opt-text"><span class="opt-title">現在地で出勤・帰宅を予想して並べる</span></span>
         </label>
         <div class="place-row">
-          <div><div class="place-name">自宅</div><div class="place-val" id="homeVal">未設定</div></div>
+          <div class="place-name">自宅（<span id="homeVal">未設定</span>）</div>
           <div class="share-actions"><button class="btn btn-small" type="button" id="setHome">今いる場所を自宅にする</button><button class="btn btn-small" type="button" id="clearHome">消す</button></div>
           <div class="field place-search" id="homeSearch" data-key="home">
             <label class="sr-only" for="homeInput">自宅を住所・駅名で探す</label>
@@ -564,7 +564,7 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
           </div>
         </div>
         <div class="place-row">
-          <div><div class="place-name">職場（任意）</div><div class="place-val" id="workVal">未設定</div></div>
+          <div class="place-name">職場（<span id="workVal">未設定</span>）</div>
           <div class="share-actions"><button class="btn btn-small" type="button" id="setWork">今いる場所を職場にする</button><button class="btn btn-small" type="button" id="clearWork">消す</button></div>
           <div class="field place-search" id="workSearch" data-key="work">
             <label class="sr-only" for="workInput">職場を住所・駅名で探す</label>
@@ -2189,8 +2189,7 @@ async function refreshPosition(force) {
 }
 function placeText(pl) {
   if (!pl) return '未設定';
-  const d = pl.at ? new Date(pl.at) : null;
-  return `${pl.label ? pl.label : '設定済み'}${d ? `（${d.getMonth() + 1}/${d.getDate()} に登録）` : ''}${geo.pos ? `・今いる場所から約${fmtDist(distM(geo.pos, pl))}` : ''}`;
+  return pl.label || '設定済み';
 }
 function savePlace(key, pl, how) {
   state.settings[key] = { lat: pl.lat, lon: pl.lon, label: pl.label || '', at: new Date().toISOString() };
@@ -2242,10 +2241,15 @@ function makePlaceSearch(key) {
       const [stopsRes, allRes] = await Promise.allSettled([ask({ type: 'STOP' }), ask({})]);
       if (my !== seq) return;
       if (stopsRes.status === 'rejected' && allRes.status === 'rejected') throw allRes.reason;
-      const conv = x => ({
-        lat: x.lat, lon: x.lon, label: [x.name, x.houseNumber].filter(Boolean).join(' '),
-        sub: [areaText(x.areas), x.type === 'STOP' ? '駅・停留所' : x.type === 'ADDRESS' ? '住所' : '場所'].filter(Boolean).join('・')
-      });
+      const conv = x => {
+        const modes = Array.isArray(x.modes) ? x.modes.join(' ') : '';
+        const rail = x.type === 'STOP' && /RAIL|SUBWAY|METRO|TRAM|MONORAIL|FUNICULAR/.test(modes);
+        const bus = x.type === 'STOP' && !rail && /BUS|COACH/.test(modes);
+        let label = [x.name, x.houseNumber].filter(Boolean).join(' ');
+        if (rail && !/駅$/.test(label)) label += '駅'; // 鉄道の駅は「森本駅」のように
+        return { lat: x.lat, lon: x.lon, label,
+          sub: [areaText(x.areas), rail ? '駅' : bus ? 'バス停' : x.type === 'STOP' ? '駅・停留所' : x.type === 'ADDRESS' ? '住所' : '場所'].filter(Boolean).join('・') };
+      };
       const ok = v => v.status === 'fulfilled' && Array.isArray(v.value) ? v.value.filter(x => x && isFinite(x.lat) && isFinite(x.lon) && x.name) : [];
       let remote = [];
       for (const x of [...ok(stopsRes), ...ok(allRes)].map(conv)) {
