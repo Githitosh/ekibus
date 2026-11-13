@@ -152,7 +152,7 @@ select.input{padding-right:36px;background-image:linear-gradient(45deg,transpare
 
 .favs{list-style:none;margin:0;padding:0}
 .fav{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 10px;padding:10px 0;border-top:1px solid var(--line-2)}
-.fav > div:first-child{flex:1 1 200px;min-width:0}
+.fav > div:first-child, .fav > .fav-pick{flex:1 1 200px;min-width:0}
 .fav-actions{margin-left:auto}
 .fav:first-child{border-top:0}
 .fav-name{font-weight:600;overflow-wrap:anywhere}
@@ -287,6 +287,14 @@ a.btn{display:inline-flex;align-items:center;text-decoration:none}
 .place-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line-2)}
 .place-name{font-weight:600}
 .place-val{font-size:13px;color:var(--text-3)}
+.place-search{flex-basis:100%}
+.fav-pick{all:unset;display:block;cursor:pointer;border-radius:8px;padding:2px 4px;margin:-2px -4px}
+.fav-pick:focus-visible{outline:3px solid rgba(74,144,226,.45)}
+.fav-pick:hover .fav-name{color:var(--accent-strong)}
+.fav.is-pinned{background:var(--accent-weak);border-radius:10px;padding-left:10px;padding-right:6px}
+.kind-chip.pin{background:#1A1A1A;color:#fff}
+.unpin{all:unset;cursor:pointer;font-size:12px;color:var(--accent-strong);margin-right:8px;text-decoration:underline}
+.card{scroll-margin-top:120px}
 .dep-track{font-weight:600;color:var(--text)}
 .dep-track.none{font-weight:400;color:var(--text-3)}
 .dep-track.usual{font-weight:600;color:var(--text)}
@@ -525,26 +533,26 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
         <div class="place-row">
           <div><div class="place-name">自宅</div><div class="place-val" id="homeVal">未設定</div></div>
           <div class="share-actions"><button class="btn btn-small" type="button" id="setHome">今いる場所を自宅にする</button><button class="btn btn-small" type="button" id="clearHome">消す</button></div>
+          <div class="field place-search" id="homeSearch" data-key="home">
+            <label class="sr-only" for="homeInput">自宅を住所・駅名で探す</label>
+            <input class="input" id="homeInput" type="text" autocomplete="off" enterkeyhint="search" placeholder="住所・駅名で探す（例：金沢市角間町）" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="homeList">
+            <ul class="ac-list" id="homeList" role="listbox" hidden></ul>
+          </div>
         </div>
         <div class="place-row">
           <div><div class="place-name">職場（任意）</div><div class="place-val" id="workVal">未設定</div></div>
           <div class="share-actions"><button class="btn btn-small" type="button" id="setWork">今いる場所を職場にする</button><button class="btn btn-small" type="button" id="clearWork">消す</button></div>
+          <div class="field place-search" id="workSearch" data-key="work">
+            <label class="sr-only" for="workInput">職場を住所・駅名で探す</label>
+            <input class="input" id="workInput" type="text" autocomplete="off" enterkeyhint="search" placeholder="住所・駅名で探す（例：金沢市角間町）" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="workList">
+            <ul class="ac-list" id="workList" role="listbox" hidden></ul>
+          </div>
         </div>
         <label class="set-label" for="radiusSel" style="margin-top:10px">「近く」とみなす距離</label>
         <select class="input" id="radiusSel">
           <option value="300">300 m</option><option value="500">500 m</option><option value="1000">1 km</option><option value="2000">2 km</option><option value="5000">5 km</option>
         </select>
-        <p class="set-note" id="placeMsg" role="status" aria-live="polite">現在地が使えないときは、時刻（4時〜正午は出勤、それ以外は帰宅）で予想します。予想は区間の種類（行き・帰り）を選んだお気に入りに使います。</p>
-      </div>
-
-      <div class="set-block">
-        <span class="set-label">北鉄バス（アプリ内の時刻表）</span>
-        <label class="opt" style="margin-top:0">
-          <input type="checkbox" id="campusBreak">
-          <span class="opt-text"><span class="opt-title">金沢大学の学期休み期間として表示する</span>
-          <span class="opt-desc">「学期休み期間、運休」の便を表示しません。授業期間中は外しておいてください。</span></span>
-        </label>
-        <p class="set-note" id="hkInfo"></p>
+        <p class="set-note" id="placeMsg" role="status" aria-live="polite">位置情報を許可しなくても、住所・駅名で探すか、地図アプリで調べた「緯度,経度」を貼り付けて設定できます。現在地が使えないときは、時刻（4時〜正午は出勤、それ以外は帰宅）で予想します。予想は区間の種類（行き・帰り）を選んだお気に入りに使います。</p>
       </div>
 
       <div class="danger-zone">
@@ -1038,8 +1046,13 @@ function trackTitle(place) {
 }
 function lineNames(lg) {
   const clean = s => String(s || '').trim();
+  const isNum = s => /^\d{4,}$/.test(zen2han(s)); // 列車番号だけの名前
   const ds = clean(lg.displayName), sn = clean(lg.routeShortName), ln = clean(lg.routeLongName), ts = clean(lg.tripShortName);
-  const name = ds || sn || ln || ts || clean(lg.agencyName) || '（路線名なし）';
+  const cands = [ds, sn, ln, ts].filter(Boolean);
+  const named = cands.find(c => !isNum(c));
+  const agency = clean(lg.agencyName);
+  const num = cands.find(isNum);
+  const name = named || (agency ? `${agency}${num ? `（列車番号 ${num}）` : ''}` : (num ? `列車番号 ${num}` : '（路線名なし）'));
   let sub = '';
   if (ln && ln !== name && !name.includes(ln)) sub = ln;
   else if (ts && ts !== name && !name.includes(ts)) sub = ts;
@@ -1285,7 +1298,6 @@ const Hokutetsu = {
   makeTrip(route, row, day) {
     const [d, a, r, via, dest, fp, tp, fare, ni, alt] = row;
     const note = HOKUTETSU.notes[ni] || '';
-    if (state.settings.campusBreak && /学期休み期間、運休/.test(note)) return null;
     const dep = jstAt(day, d);
     let arv = jstAt(day, a);
     if (arv < dep) arv = new Date(arv.getTime() + 86400000);
@@ -1454,10 +1466,12 @@ function renderCard(id) {
     busy ? h('span', { text: '更新中…' }) : null);
   card.className = 'card' + (route.kind === 'go' ? ' kind-go' : route.kind === 'back' ? ' kind-back' : '');
   const pred = orderedRoutes().p;
-  const isPick = !!(pred.mode && route.kind && route.kind === pred.mode);
+  const isPinned = pinnedId === route.id;
+  const isPick = !isPinned && !pinnedId && !!(pred.mode && route.kind && route.kind === pred.mode);
   const head = h('header', { class: 'card-head' },
     h('div', null,
-      (route.kind || route.label || isPick) ? h('div', { class: 'card-label' },
+      (route.kind || route.label || isPick || isPinned) ? h('div', { class: 'card-label' },
+        isPinned ? [h('span', { class: 'kind-chip pin', text: '選択中' }), h('button', { class: 'unpin', type: 'button', onclick: () => pinRoute(route.id), text: '解除' })] : null,
         route.kind ? h('span', { class: 'kind-chip ' + route.kind, text: KIND_JA[route.kind] }) : null,
         isPick ? h('span', { class: 'kind-chip pick', text: 'おすすめ' }) : null,
         route.label || '') : null,
@@ -1773,12 +1787,14 @@ function renderFavs() {
   ul.textContent = '';
   $('#favCount').textContent = state.routes.length ? `（${state.routes.length}件）` : '';
   if (!state.routes.length) { ul.append(h('li', { class: 'empty-note', text: '登録された区間はまだありません。' })); return; }
+  ul.append(h('li', { class: 'empty-note', style: 'font-size:13px;padding:0 0 4px', text: '区間をタップすると、その時刻をいちばん上に表示します（もう一度タップで解除）。' }));
   state.routes.forEach((r, i) => {
     const name = `${r.from.name} → ${r.to.name}`;
-    const li = h('li', { class: 'fav' + (r.kind ? ' kind-' + r.kind : '') });
+    const pinned = pinnedId === r.id;
+    const li = h('li', { class: 'fav' + (r.kind ? ' kind-' + r.kind : '') + (pinned ? ' is-pinned' : '') });
     const normal = () => li.replaceChildren(
-      h('div', null,
-        h('div', { class: 'fav-name' }, r.kind ? h('span', { class: 'kind-chip ' + r.kind, text: KIND_JA[r.kind] }) : null, name),
+      h('button', { class: 'fav-pick', type: 'button', 'aria-pressed': String(pinned), title: pinned ? 'タップで選択を解除' : 'タップすると、この区間をいちばん上に表示します', onclick: () => pinRoute(r.id) },
+        h('div', { class: 'fav-name' }, pinned ? h('span', { class: 'kind-chip pin', text: '選択中' }) : null, r.kind ? h('span', { class: 'kind-chip ' + r.kind, text: KIND_JA[r.kind] }) : null, name),
         h('div', { class: 'fav-sub', text: [r.label, r.memo ? 'のりば：' + r.memo : '', providerOf(r.provider).label].filter(Boolean).join(' · ') })),
       h('div', { class: 'fav-actions' },
         h('button', { class: 'icon-btn small', type: 'button', 'aria-label': `${name} を編集`, title: '名前・種類・のりばメモを編集', onclick: edit }, svg(ICON.edit)),
@@ -1836,6 +1852,7 @@ function removeRoute(id) {
   results.delete(id);
   const qi = queue.indexOf(id); if (qi >= 0) queue.splice(qi, 1);
   state.routes = state.routes.filter(r => r.id !== id);
+  if (pinnedId === id) setPinned(null);
   saveState(); saveCache(); renderAll();
 }
 
@@ -1915,13 +1932,9 @@ function openSettings() {
   $('#countSel').value = String(s.perRoute);
   $('#xferSel').value = String(s.maxTransfers ?? '');
   $('#contactInput').value = s.contact || '';
-  $('#campusBreak').checked = !!s.campusBreak;
   $('#useGps').checked = !!s.useGps;
   $('#radiusSel').value = String(s.radius || 1000);
   syncPlaceUI();
-  $('#hkInfo').textContent = Hokutetsu.ready()
-    ? `北陸鉄道の公式時刻表（${HOKUTETSU.revLabel}）から ${HOKUTETSU.fetched.replace(/-/g, '/')} に収録した、金沢大学自然研前と金沢駅・武蔵ヶ辻・近江町市場・香林坊・兼六園下・金沢城・東金沢駅・西金沢の間の直通便です。平日・土曜・日曜祝日で分けています。年末年始や臨時のダイヤは入っていません。`
-    : '';
   resetWipe();
   if (typeof dlg.showModal === 'function') dlg.showModal();
   else { dlg.setAttribute('open', ''); dlg.classList.add('fallback-open'); }
@@ -1948,7 +1961,6 @@ $('#settingsForm').addEventListener('submit', e => {
     perRoute: parseInt($('#countSel').value, 10) || 4,
     maxTransfers: $('#xferSel').value,
     contact: $('#contactInput').value.trim(),
-    campusBreak: $('#campusBreak').checked,
     useGps: $('#useGps').checked,
     radius: parseInt($('#radiusSel').value, 10) || 1000
   };
@@ -2061,11 +2073,29 @@ function predict() {
   else if (!st.useGps) why += '設定で「現在地から予想」をオンにすると、自宅からの距離で予想します。';
   return { mode, why };
 }
+/* お気に入りで選んだ区間（アプリを閉じるまでいちばん上に出す） */
+let pinnedId = (() => { try { return sessionStorage.getItem('ekibus.pin') || null; } catch { return null; } })();
+function setPinned(id) {
+  pinnedId = id || null;
+  try { pinnedId ? sessionStorage.setItem('ekibus.pin', pinnedId) : sessionStorage.removeItem('ekibus.pin'); } catch { }
+}
+function pinRoute(id) {
+  setPinned(pinnedId === id ? null : id);
+  renderAll();
+  if (pinnedId) {
+    $('#favPanel').open = false;
+    const c = document.getElementById('card-' + pinnedId);
+    if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
 function orderedRoutes() {
   const p = predict();
-  if (!p.mode) return { list: state.routes.slice(), p };
-  const rank = r => r.kind === p.mode ? 0 : (!r.kind ? 1 : 2);
-  const list = state.routes.map((r, i) => ({ r, i })).sort((a, b) => rank(a.r) - rank(b.r) || a.i - b.i).map(x => x.r);
+  let list = state.routes.slice();
+  if (p.mode) {
+    const rank = r => r.kind === p.mode ? 0 : (!r.kind ? 1 : 2);
+    list = state.routes.map((r, i) => ({ r, i })).sort((a, b) => rank(a.r) - rank(b.r) || a.i - b.i).map(x => x.r);
+  }
+  if (pinnedId && list.some(r => r.id === pinnedId)) list = [list.find(r => r.id === pinnedId), ...list.filter(r => r.id !== pinnedId)];
   return { list, p };
 }
 function renderPredictBar() {
@@ -2076,24 +2106,26 @@ function renderPredictBar() {
   const cur = predictOverride === null ? 'auto' : predictOverride;
   const btn = (v, t) => h('button', { type: 'button', class: 'seg-btn', 'aria-pressed': String(cur === v), onclick: () => { predictOverride = v === 'auto' ? null : v; applyOrder(true); }, text: t });
   const title = p.mode === 'go' ? '出勤の区間（行き）を上に表示しています' : p.mode === 'back' ? '帰宅の区間（帰り）を上に表示しています' : '登録した順に表示しています';
-  bar.replaceChildren(
+  bar.replaceChildren(...[
     h('div', { class: 'p-title' }, p.mode ? h('span', { class: 'kind-chip ' + p.mode, text: KIND_JA[p.mode] }) : null, title),
     p.why ? h('div', { class: 'p-why', text: p.why }) : null,
     h('div', { class: 'seg', role: 'group', 'aria-label': '並べ方' }, btn('auto', '自動'), btn('go', '出勤'), btn('back', '帰宅'), btn('off', 'そのまま')),
     state.settings.useGps && state.settings.home && predictOverride === null
-      ? h('div', { class: 'p-actions' }, h('button', { class: 'btn btn-small', type: 'button', onclick: () => refreshPosition(true), text: geo.pending ? '現在地を取得中…' : '現在地を取り直す' })) : null);
+      ? h('div', { class: 'p-actions' }, h('button', { class: 'btn btn-small', type: 'button', onclick: () => refreshPosition(true), text: geo.pending ? '現在地を取得中…' : '現在地を取り直す' })) : null
+  ].filter(Boolean));
 }
 function applyOrder(force) {
   const sig = orderedRoutes().list.map(r => r.id).join(',');
   if (force || sig !== board.dataset.order) renderBoard();
   renderPredictBar();
 }
+const GEO_DENIED = '位置情報の利用が許可されていません。iPhone では「設定」→「プライバシーとセキュリティ」→「位置情報サービス」→「Safari Webサイト」を「このAppの使用中」にしてから、もう一度押してください。下の欄で住所・駅名から設定することもできます。';
 function getPos(highAccuracy, fresh) {
   return new Promise((resolve, reject) => {
     if (!('geolocation' in navigator)) { reject(new Error('この環境では位置情報を使えません')); return; }
     navigator.geolocation.getCurrentPosition(
       p => resolve({ lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy }),
-      e => reject(new Error(e && e.code === 1 ? '位置情報の利用が許可されていません（ブラウザの設定を確認してください）' : e && e.code === 3 ? '時間内に取得できませんでした' : '現在地を取得できませんでした')),
+      e => reject(new Error(e && e.code === 1 ? GEO_DENIED : e && e.code === 3 ? '時間内に取得できませんでした。電波のよい場所で試すか、下の欄で住所・駅名から設定してください。' : '現在地を取得できませんでした。下の欄で住所・駅名から設定できます。')),
       { enableHighAccuracy: !!highAccuracy, timeout: 12000, maximumAge: (highAccuracy || fresh) ? 0 : 120000 });
   });
 }
@@ -2110,8 +2142,67 @@ async function refreshPosition(force) {
 function placeText(pl) {
   if (!pl) return '未設定';
   const d = pl.at ? new Date(pl.at) : null;
-  return `設定済み${d ? `（${d.getMonth() + 1}/${d.getDate()} に登録）` : ''}${geo.pos ? `・今いる場所から約${fmtDist(distM(geo.pos, pl))}` : ''}`;
+  return `${pl.label ? pl.label : '設定済み'}${d ? `（${d.getMonth() + 1}/${d.getDate()} に登録）` : ''}${geo.pos ? `・今いる場所から約${fmtDist(distM(geo.pos, pl))}` : ''}`;
 }
+function savePlace(key, pl, how) {
+  state.settings[key] = { lat: pl.lat, lon: pl.lon, label: pl.label || '', at: new Date().toISOString() };
+  if (key === 'home') { state.settings.useGps = true; const c = $('#useGps'); if (c) c.checked = true; }
+  saveState(); syncPlaceUI();
+  $('#placeMsg').textContent = `${key === 'home' ? '自宅' : '職場'}を${how}に設定しました。`;
+  applyOrder(false);
+  if (key === 'home') refreshPosition(true);
+}
+/* 住所・駅名・建物名で探す（Transitous の地名検索）。「36.54,136.70」のような座標の貼り付けにも対応 */
+function makePlaceSearch(key) {
+  const box = $(`#${key}Search`), input = $('input', box), list = $('ul', box);
+  let items = [], timer = null, ctrl = null, seq = 0;
+  const close = () => { list.hidden = true; input.setAttribute('aria-expanded', 'false'); };
+  const show = nodes => { list.replaceChildren(...nodes); list.hidden = false; input.setAttribute('aria-expanded', 'true'); };
+  const msg = (t, err) => show([h('li', { class: 'ac-msg' + (err ? ' error' : ''), role: 'presentation', text: t })]);
+  function choose(it) { input.value = ''; close(); savePlace(key, it, `「${it.label}」`); }
+  function render() {
+    if (!items.length) { msg('見つかりませんでした。市区町村名を付けるなど、書き方を変えてお試しください。'); return; }
+    show(items.map(it => h('li', { role: 'option', onpointerdown: e => e.preventDefault(), onclick: () => choose(it) },
+      h('div', { class: 'ac-name', text: it.label }), it.sub ? h('div', { class: 'ac-sub', text: it.sub }) : null)));
+  }
+  async function run() {
+    const q = input.value.trim();
+    if (!q) { close(); return; }
+    const m = zen2han(q).replace(/[，、]/g, ',').match(/^\s*(-?\d{1,2}\.\d+)\s*[,\s]\s*(-?\d{1,3}\.\d+)\s*$/);
+    if (m) { items = [{ lat: +m[1], lon: +m[2], label: `緯度 ${(+m[1]).toFixed(5)}・経度 ${(+m[2]).toFixed(5)}`, sub: '貼り付けた座標' }]; render(); return; }
+    // 登録済みの区間で座標がわかる駅・停留所も候補にする
+    const local = [];
+    for (const r of state.routes) for (const st of [r.from, r.to]) {
+      if (st && st.lat != null && st.lon != null && normQ(st.name).includes(normQ(q)) && !local.some(x => x.label === st.name)) local.push({ lat: st.lat, lon: st.lon, label: st.name, sub: '登録した区間の駅・停留所' });
+    }
+    if (ctrl) ctrl.abort();
+    ctrl = new AbortController();
+    const my = ++seq;
+    if (local.length) { items = local; render(); } else msg('検索中…');
+    try {
+      const p = new URLSearchParams({ text: q, language: 'ja', numResults: '8' });
+      if (geo.pos) p.set('place', `${geo.pos.lat},${geo.pos.lon}`);
+      const data = await getJSON(`${Transitous.base}/api/v1/geocode?${p}`, { signal: ctrl.signal });
+      if (my !== seq) return;
+      const remote = (Array.isArray(data) ? data : []).filter(x => x && isFinite(x.lat) && isFinite(x.lon) && x.name).map(x => ({
+        lat: x.lat, lon: x.lon, label: [x.name, x.houseNumber].filter(Boolean).join(' '),
+        sub: [areaText(x.areas), x.type === 'STOP' ? '駅・停留所' : x.type === 'ADDRESS' ? '住所' : '場所'].filter(Boolean).join('・')
+      }));
+      items = [...local, ...remote].slice(0, 10);
+      if (document.activeElement === input) render();
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      if (my !== seq) return;
+      if (local.length) return;
+      items = []; msg('検索できませんでした（' + errText(e) + '）。地図アプリで調べた「緯度,経度」を貼り付けても設定できます。', true);
+    }
+  }
+  input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(run, 350); });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(timer); if (!list.hidden && items.length === 1) choose(items[0]); else run(); } else if (e.key === 'Escape') close(); });
+  input.addEventListener('blur', () => setTimeout(close, 200));
+}
+makePlaceSearch('home');
+makePlaceSearch('work');
 function syncPlaceUI() {
   $('#homeVal').textContent = placeText(state.settings.home);
   $('#workVal').textContent = placeText(state.settings.work);
@@ -2121,12 +2212,9 @@ async function setPlace(key) {
   msg.textContent = '現在地を取得しています…';
   try {
     const pos = await getPos(true);
-    state.settings[key] = { lat: pos.lat, lon: pos.lon, at: new Date().toISOString() };
-    if (key === 'home') { state.settings.useGps = true; $('#useGps').checked = true; }
     geo.pos = pos; geo.at = Date.now(); geo.err = '';
-    saveState(); syncPlaceUI();
-    msg.textContent = `${key === 'home' ? '自宅' : '職場'}を今いる場所に設定しました（誤差 約${fmtDist(pos.acc || 0)}）。`;
-    applyOrder(false);
+    savePlace(key, { lat: pos.lat, lon: pos.lon, label: '今いる場所' }, '今いる場所');
+    msg.textContent += `（誤差 約${fmtDist(pos.acc || 0)}）`;
   } catch (e) { msg.textContent = e.message; }
 }
 $('#setHome').addEventListener('click', () => setPlace('home'));
