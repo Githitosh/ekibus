@@ -96,7 +96,15 @@ main{max-width:1200px;margin:0 auto;padding:16px calc(env(safe-area-inset-right)
 .panel > summary .count{font-weight:500;color:var(--text-3);font-size:15px;margin-left:6px}
 .chev{width:18px;height:18px;color:var(--text-3);transition:transform .2s}
 .panel[open] > summary .chev{transform:rotate(180deg)}
-.panel-body{padding:2px 16px 16px}
+.panel-body{padding:14px 16px 16px}
+/* 上のタブ */
+.tabs{display:flex;gap:6px;margin:0 0 12px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:1px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:1 1 auto;min-height:40px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text-2);font-size:14px;font-weight:600;white-space:nowrap;cursor:pointer}
+@media (min-width:760px){.tab{flex:0 0 auto;padding:0 16px}}
+.tab.set{color:var(--accent-strong);border-color:var(--accent)}
+.tab.on{background:var(--accent-weak);border-color:var(--accent);color:var(--accent-strong)}
+
 
 .pair{display:grid;grid-template-columns:1fr auto;gap:8px 10px;align-items:end}
 .pair .fields{display:grid;gap:12px}
@@ -374,14 +382,17 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
 </div></div>
 <div class="sr-only" id="ptrLive" aria-live="polite"></div>
 <main>
+  <!-- 上のタブ：タップすると下に欄が開く（もう一度タップで閉じる） -->
+  <nav class="tabs" id="tabs" aria-label="メニュー">
+    <button type="button" class="tab" data-tab="addPanel" aria-controls="addPanel" aria-expanded="false">＋ 追加</button>
+    <button type="button" class="tab" data-tab="favPanel" aria-controls="favPanel" aria-expanded="false">お気に入り</button>
+    <button type="button" class="tab" data-tab="timebar" aria-controls="timebar" aria-expanded="false" id="timeTab">時刻指定</button>
+    <button type="button" class="tab" data-tab="predictBar" aria-controls="predictBar" aria-expanded="false" id="orderTab" hidden>並び順</button>
+  </nav>
   <div id="banners"></div>
 
   <!-- 区間追加エリア -->
-  <details class="panel" id="addPanel">
-    <summary>
-      <span>＋ 区間を追加</span>
-      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-    </summary>
+  <section class="panel" id="addPanel" aria-label="区間を追加" hidden>
     <div class="panel-body">
       <div class="pair">
         <div class="fields">
@@ -417,7 +428,7 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
       </div>
       <div class="row">
         <div class="kind-pick" role="radiogroup" aria-label="区間の種類">
-          <span class="kind-label">種類（色分け・出勤と帰宅の予想に使います）</span>
+          <span class="kind-label">種類</span>
           <label class="kind-opt"><input type="radio" name="addKind" value="" checked><span>なし</span></label>
           <label class="kind-opt go"><input type="radio" name="addKind" value="go"><span>行き（出勤）</span></label>
           <label class="kind-opt back"><input type="radio" name="addKind" value="back"><span>帰り（帰宅）</span></label>
@@ -431,25 +442,20 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
       </div>
       <div class="row">
         <button class="btn btn-primary" id="addBtn" type="button" disabled>お気に入りに登録</button>
-        <span class="hint" id="providerHint" style="margin-top:0"></span>
       </div>
       <div class="msg" id="addMsg" role="status" aria-live="polite"></div>
     </div>
-  </details>
+  </section>
 
   <!-- お気に入り一覧 -->
-  <details class="panel" id="favPanel">
-    <summary>
-      <span>お気に入り<span class="count" id="favCount"></span></span>
-      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-    </summary>
+  <section class="panel" id="favPanel" aria-label="お気に入り" hidden>
     <div class="panel-body">
       <ul class="favs" id="favList"></ul>
     </div>
-  </details>
+  </section>
 
   <!-- 時刻の指定 -->
-  <section class="timebar" id="timebar" aria-label="表示する時刻">
+  <section class="timebar" id="timebar" aria-label="表示する時刻" hidden>
     <div class="seg" role="group" aria-label="時刻の指定">
       <button type="button" class="seg-btn" data-mode="now" aria-pressed="true">今すぐ</button>
       <button type="button" class="seg-btn" data-mode="dep" aria-pressed="false">出発時刻</button>
@@ -490,23 +496,19 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
     </div>
     <div class="dlg-body">
       <fieldset>
-        <legend>駅・バス停の検索に使うデータ</legend>
+        <legend>検索に使うデータ</legend>
         <label class="opt">
           <input type="radio" name="provider" value="transitous">
-          <span class="opt-text"><span class="opt-title">Transitous（無料・キー不要）</span>
-          <span class="opt-desc">公開時刻表データ（GTFS）による経路検索です。日本ではJRなど一部の鉄道と、データを公開している路線バスのみが対象で、対象外の路線は検索できません。</span></span>
+          <span class="opt-text"><span class="opt-title">Transitous</span></span>
         </label>
         <label class="opt">
           <input type="radio" name="provider" value="ekispert">
-          <span class="opt-text"><span class="opt-title">駅すぱあと API（アクセスキーが必要）</span>
-          <span class="opt-desc">全国の鉄道・バスに対応します。時刻表に基づく検索には、ダイヤ探索が使えるプラン（スタンダードプラン、90日無料評価版など）のキーが必要です。フリープランのキーでは使えません。</span></span>
+          <span class="opt-text"><span class="opt-title">駅すぱあと API</span></span>
         </label>
         <label class="opt">
           <input type="radio" name="provider" value="demo">
-          <span class="opt-text"><span class="opt-title">デモ（架空のデータ）</span>
-          <span class="opt-desc">画面の見え方を確かめるための架空の駅・時刻です。実際の運行とは関係ありません。</span></span>
+          <span class="opt-text"><span class="opt-title">デモ</span></span>
         </label>
-        <p class="set-note">登録済みの区間は、登録したときのデータで表示します。</p>
       </fieldset>
 
       <div class="set-block">
@@ -515,7 +517,6 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
           <input class="input" id="keyInput" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="未設定">
           <button class="btn" type="button" id="toggleKey">表示</button>
         </div>
-        <p class="set-note">キーはこの端末のブラウザ内にだけ保存されます。</p>
       </div>
 
       <div class="set-block grid2">
@@ -534,20 +535,17 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
           </select>
         </div>
       </div>
-      <p class="set-note">乗換回数の上限は Transitous とデモで使います。</p>
 
       <div class="set-block">
         <label class="set-label" for="contactInput">連絡先（任意）</label>
         <input class="input" id="contactInput" type="text" autocomplete="off" placeholder="メールアドレスやWebサイトのURL">
-        <p class="set-note">このアプリをWebに公開して Transitous を使う場合、利用方針により連絡先の掲示が求められます。入力すると画面下に表示します。</p>
       </div>
 
       <div class="set-block">
-        <span class="set-label">自宅・職場と現在地（GPS）</span>
+        <span class="set-label">自宅・職場</span>
         <label class="opt" style="margin-top:0">
           <input type="checkbox" id="useGps">
-          <span class="opt-text"><span class="opt-title">現在地から出勤・帰宅を予想して並べる</span>
-          <span class="opt-desc">自宅の近くにいるときは「行き（出勤）」、離れているときは「帰り（帰宅）」の区間をいちばん上に出します。位置情報はこの端末の中だけで使い、どこにも送りません。</span></span>
+          <span class="opt-text"><span class="opt-title">現在地で出勤・帰宅を予想して並べる</span></span>
         </label>
         <div class="place-row">
           <div><div class="place-name">自宅</div><div class="place-val" id="homeVal">未設定</div></div>
@@ -573,7 +571,7 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
         <select class="input" id="radiusSel">
           <option value="300">300 m</option><option value="500">500 m</option><option value="1000">1 km</option><option value="2000">2 km</option><option value="5000">5 km</option>
         </select>
-        <p class="set-note" id="placeMsg" role="status" aria-live="polite">位置情報を許可しなくても、住所・駅名で探すか、地図アプリで調べた「緯度,経度」を貼り付けて設定できます。現在地が使えないときは、時刻（4時〜正午は出勤、それ以外は帰宅）で予想します。予想は区間の種類（行き・帰り）を選んだお気に入りに使います。</p>
+        <p class="set-note" id="placeMsg" role="status" aria-live="polite"></p>
       </div>
 
       <div class="danger-zone">
@@ -1462,8 +1460,7 @@ function renderBoard() {
   board.textContent = '';
   if (!state.routes.length) {
     board.append(h('div', { class: 'board-empty' },
-      h('div', { style: 'font-weight:600;color:#1A1A1A;margin-bottom:4px', text: 'まだ区間が登録されていません' }),
-      h('div', { text: '上の「区間を追加」で出発地と到着地を選び、お気に入りに登録してください。' })));
+      h('div', { style: 'font-weight:600;color:#1A1A1A', text: 'まだ区間が登録されていません' })));
     return;
   }
   const { list } = orderedRoutes();
@@ -1797,13 +1794,24 @@ function addRoute(a, b, label, kind = '', memo = '') {
   return null;
 }
 function updateProviderHint() {
-  const p = providerOf(state.settings.provider);
-  let s = `検索に使うデータ：${p.label}`;
-  if (p.id === 'ekispert' && !p.ready()) s += '（アクセスキー未設定）';
-  if (Hokutetsu.ready()) s += '。金沢大学自然研前などの北鉄バスは、アプリ内の時刻表からも選べます';
-  $('#providerHint').textContent = s;
   for (const box of [fromBox, toBox]) if (box.value && box.value.provider !== 'hokutetsu' && box.value.provider !== state.settings.provider) box.clear();
 }
+
+/* =====================================================================
+   上のタブ（区間を追加・お気に入り・時刻指定・並び順）。開くのは1つだけ
+   ===================================================================== */
+const TAB_IDS = ['addPanel', 'favPanel', 'timebar', 'predictBar'];
+const curTab = () => TAB_IDS.find(t => !document.getElementById(t).hidden) || null;
+function openTab(id) {
+  for (const t of TAB_IDS) {
+    const on = t === id;
+    document.getElementById(t).hidden = !on;
+    const b = document.querySelector(`.tab[data-tab="${t}"]`);
+    b.setAttribute('aria-expanded', String(on));
+    b.classList.toggle('on', on);
+  }
+}
+document.querySelectorAll('#tabs .tab').forEach(b => b.addEventListener('click', () => openTab(curTab() === b.dataset.tab ? null : b.dataset.tab)));
 
 /* =====================================================================
    画面：お気に入り一覧
@@ -1811,7 +1819,6 @@ function updateProviderHint() {
 function renderFavs() {
   const ul = $('#favList');
   ul.textContent = '';
-  $('#favCount').textContent = state.routes.length ? `（${state.routes.length}件）` : '';
   if (!state.routes.length) { ul.append(h('li', { class: 'empty-note', text: '登録された区間はまだありません。' })); return; }
   ul.append(h('li', { class: 'empty-note', style: 'font-size:13px;padding:0 0 4px', text: '区間をタップすると、その時刻をいちばん上に表示します（もう一度タップで解除）。' }));
   state.routes.forEach((r, i) => {
@@ -1867,10 +1874,9 @@ function addReverse(r) {
   else if (/帰り/.test(label)) label = label.replace(/帰り/g, '行き');
   else if (label) label += '（逆）';
   const err = addRoute({ ...r.to, provider: r.provider }, { ...r.from, provider: r.provider }, label, kind, '');
-  const panel = $('#favPanel');
   const note = h('li', { class: 'empty-note', role: 'status', text: err || `「${r.to.name} → ${r.from.name}」を追加しました。` });
   $('#favList').append(note);
-  panel.open = true;
+  openTab('favPanel');
 }
 function removeRoute(id) {
   const res = results.get(id);
@@ -1915,7 +1921,7 @@ function renderFooter() {
   used.add(state.settings.provider);
   const f = $('#footer');
   f.textContent = '';
-  f.append(h('p', { class: 'disclaimer' }, '表示内容の正確性は保証しません。遅延・運休・ダイヤ改正などで実際と異なる場合があります。ご乗車の前に、必ず各交通事業者の公式情報で確認してください。'));
+  f.append(h('p', { class: 'disclaimer' }, '表示内容は保証しません。乗車前に公式情報を確認してください。'));
   const src = h('p', null, 'データ出典：');
   const parts = [];
   if (used.has('transitous')) parts.push([h('a', { href: 'https://transitous.org/', target: '_blank', rel: 'noopener noreferrer', text: 'Transitous' }), '（',
@@ -1924,12 +1930,12 @@ function renderFooter() {
   if (used.has('ekispert')) parts.push(['Powered by ', h('a', { href: 'https://api-info.ekispert.com/', target: '_blank', rel: 'noopener noreferrer', text: '駅すぱあと API' }), '（株式会社ヴァル研究所）']);
   if (Hokutetsu.ready()) parts.push(['北鉄バスの時刻：', h('a', { href: HOKUTETSU.url, target: '_blank', rel: 'noopener noreferrer', text: '北陸鉄道 時刻・運賃検索' }), `（${HOKUTETSU.revLabel}）から収録`]);
   if (used.has('demo')) parts.push('デモ表示は架空のデータです');
-  parts.push(['新幹線の番線：', h('a', { href: 'https://timetable.jr-odekake.net/', target: '_blank', rel: 'noopener noreferrer', text: 'JR西日本 駅時刻表' }), '（2026年11月13日〜12月26日、金沢・富山・敦賀）。在来線の「通常」は公式のりば案内の範囲で、列車ごとに変わります']);
+  parts.push(['新幹線の番線：', h('a', { href: 'https://timetable.jr-odekake.net/', target: '_blank', rel: 'noopener noreferrer', text: 'JR西日本 駅時刻表' })]);
   parts.forEach((p, i) => { if (i) src.append(' ／ '); src.append(...[p].flat()); });
   f.append(src);
   if (APP.repo) f.append(h('p', null, 'ソースコード・連絡先：', h('a', { href: APP.repo, target: '_blank', rel: 'noopener noreferrer', text: APP.repo.replace(/^https:\/\//, '') }), '（MIT License）'));
   if (state.settings.contact) f.append(h('p', { text: '連絡先：' + state.settings.contact }));
-  f.append(h('p', { text: `作成日時：${APP.created}　位置情報は、出勤・帰宅の予想をオンにしたときだけこの端末の中で使い、送信しません。登録内容はこの端末のブラウザ内に保存されます。` }));
+  f.append(h('p', { text: `作成日時：${APP.created}` }));
 }
 function updateRefreshAll() {
   const busy = [...results.values()].some(r => r.ctrl);
@@ -1943,7 +1949,7 @@ function renderAll() {
   renderFooter();
   updateProviderHint();
   updateRefreshAll();
-  if (!state.routes.length) $('#addPanel').open = true;
+  if (!state.routes.length && !curTab()) openTab('addPanel');
 }
 
 /* =====================================================================
@@ -2022,6 +2028,13 @@ dlg.addEventListener('click', e => { if (e.target === dlg) closeSettings(); }); 
 const pad2 = n => String(n).padStart(2, '0');
 function syncTimeUI() {
   document.querySelectorAll('#timebar .seg-btn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === timeSel.mode)));
+  const tt = $('#timeTab');
+  if (timeSel.mode === 'now' || !timeSel.at) { tt.textContent = '時刻指定'; tt.classList.remove('set'); }
+  else {
+    const a = timeSel.at, y1 = jstYMD(new Date()), y2 = jstYMD(a), today = y1.y === y2.y && y1.m === y2.m && y1.d === y2.d;
+    tt.textContent = `${today ? '' : `${y2.d}日 `}${pad2(a.getHours())}:${pad2(a.getMinutes())}${timeSel.mode === 'arr' ? '着' : '発'}`;
+    tt.classList.add('set');
+  }
   $('#timeRow').hidden = timeSel.mode === 'now';
   if (!timeSel.at) return;
   const a = timeSel.at;
@@ -2078,25 +2091,23 @@ const fmtDist = m => m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).t
 const hasKinds = () => state.routes.some(r => r.kind === 'go' || r.kind === 'back');
 function predict() {
   if (!hasKinds()) return { mode: null, why: '' };
-  if (predictOverride === 'off') return { mode: null, why: '登録した順に並べています', manual: true };
-  if (predictOverride) return { mode: predictOverride, why: '手動で選んでいます', manual: true };
+  if (predictOverride === 'off') return { mode: null, why: '', manual: true };
+  if (predictOverride) return { mode: predictOverride, why: '', manual: true };
   const st = state.settings, r = Number(st.radius) || 1000;
   if (st.useGps && st.home && geo.pos) {
     const dh = distM(geo.pos, st.home);
-    if (dh <= r) return { mode: 'go', why: `自宅の近く（約${fmtDist(dh)}）にいるので、出勤と予想しました。`, gps: true };
+    if (dh <= r) return { mode: 'go', why: `自宅の近く（約${fmtDist(dh)}）`, gps: true };
     if (st.work) {
       const dw = distM(geo.pos, st.work);
-      if (dw <= r) return { mode: 'back', why: `職場の近く（約${fmtDist(dw)}）にいるので、帰宅と予想しました。`, gps: true };
+      if (dw <= r) return { mode: 'back', why: `職場の近く（約${fmtDist(dw)}）`, gps: true };
     }
-    return { mode: 'back', why: `自宅から約${fmtDist(dh)}離れているので、帰宅と予想しました。`, gps: true };
+    return { mode: 'back', why: `自宅から約${fmtDist(dh)}`, gps: true };
   }
   const hr = new Date().getHours();
   const mode = (hr >= 4 && hr < 12) ? 'go' : 'back';
-  let why = `今の時刻（${hr}時台）から、${mode === 'go' ? '出勤' : '帰宅'}と予想しました。`;
-  if (st.useGps && !st.home) why += '自宅を設定すると現在地で予想します。';
-  else if (st.useGps && geo.pending) why += '現在地を取得しています…';
-  else if (st.useGps && geo.err) why += `現在地を使えませんでした（${geo.err}）。`;
-  else if (!st.useGps) why += '設定で「現在地から予想」をオンにすると、自宅からの距離で予想します。';
+  let why = `${hr}時台`;
+  if (st.useGps && st.home && geo.pending) why += '・現在地を取得中…';
+  else if (st.useGps && st.home && geo.err) why += '・現在地を使えません';
   return { mode, why };
 }
 /* お気に入りで選んだ区間（アプリを閉じるまでいちばん上に出す） */
@@ -2109,7 +2120,7 @@ function pinRoute(id) {
   setPinned(pinnedId === id ? null : id);
   renderAll();
   if (pinnedId) {
-    $('#favPanel').open = false;
+    if (curTab() === 'favPanel') openTab(null);
     const c = document.getElementById('card-' + pinnedId);
     if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -2125,13 +2136,15 @@ function orderedRoutes() {
   return { list, p };
 }
 function renderPredictBar() {
-  const bar = $('#predictBar');
-  if (!hasKinds()) { bar.hidden = true; return; }
+  const bar = $('#predictBar'), tab = $('#orderTab');
+  tab.hidden = !hasKinds();
+  if (!hasKinds()) { if (curTab() === 'predictBar') openTab(null); bar.textContent = ''; return; }
   const p = predict();
-  bar.hidden = false;
   const cur = predictOverride === null ? 'auto' : predictOverride;
   const btn = (v, t) => h('button', { type: 'button', class: 'seg-btn', 'aria-pressed': String(cur === v), onclick: () => { predictOverride = v === 'auto' ? null : v; applyOrder(true); }, text: t });
-  const title = p.mode === 'go' ? '出勤の区間（行き）を上に表示しています' : p.mode === 'back' ? '帰宅の区間（帰り）を上に表示しています' : '登録した順に表示しています';
+  const title = p.mode === 'go' ? '出勤（行き）を上に表示' : p.mode === 'back' ? '帰宅（帰り）を上に表示' : '登録した順に表示';
+  tab.textContent = '並び順';
+  tab.classList.toggle('set', cur !== 'auto');
   bar.replaceChildren(...[
     h('div', { class: 'p-title' }, p.mode ? h('span', { class: 'kind-chip ' + p.mode, text: KIND_JA[p.mode] }) : null, title),
     p.why ? h('div', { class: 'p-why', text: p.why }) : null,
@@ -2273,7 +2286,7 @@ function renderPlaceChips() {
   for (const key of ['home', 'work']) {
     const box = document.getElementById(key + 'Chips');
     if (!box) continue;
-    box.replaceChildren(...(k.length ? [h('span', { class: 'chip-label', text: '登録した区間の駅から選ぶ：' }),
+    box.replaceChildren(...(k.length ? [h('span', { class: 'chip-label', text: '登録した駅：' }),
       ...k.map(st => h('button', { type: 'button', onclick: () => savePlace(key, st, `「${st.label}」`), text: st.label }))] : []));
   }
 }
@@ -2369,9 +2382,9 @@ function renderShare() {
   if (isInApp && web) {
     body.append(h('section', { class: 'share-sec' },
       h('h3', { text: 'ブラウザで開き直す' }),
-      h('div', { class: 'notice', text: 'LINE などのアプリの中で開いています。登録した区間をきちんと残すため、Safari や Chrome で開いてください。' }),
+      h('div', { class: 'notice', text: 'アプリの中で開いています。Safari や Chrome で開いてください。' }),
       h('div', { class: 'share-actions' }, h('a', { class: 'btn btn-primary', href: externalUrl(), rel: 'noopener', text: isIOS ? 'Safari で開く' : 'ブラウザで開く' })),
-      !isLineApp ? h('p', { text: '開かないときは、画面の「…」などのメニューから「ブラウザで開く」を選んでください。' }) : null));
+      null));
   }
 
   if (web) {
@@ -2384,30 +2397,26 @@ function renderShare() {
     const lineShare = 'https://line.me/R/share?text=' + encodeURIComponent('駅・バス時刻\n' + url);
     body.append(h('section', { class: 'share-sec' },
       h('h3', { text: 'スマホですぐブラウザで開く' }),
-      h('div', { class: 'qr-box' }, qr,
-        h('p', { style: 'flex:1 1 180px;margin:0', text: 'スマホのカメラでこのQRコードを読むと、ブラウザでこのアプリが開きます。開いたら共有ボタンから「ホーム画面に追加」を選ぶと、次からアプリのように開けます。' })),
+      h('div', { class: 'qr-box' }, qr),
       h('div', { class: 'url-text', text: url }),
       h('div', { class: 'share-actions', style: 'margin-top:10px' },
         h('a', { class: 'btn btn-primary', href: lineShare, target: '_blank', rel: 'noopener noreferrer', text: 'LINEでURLを送る' }),
         h('button', { class: 'btn', type: 'button', onclick: () => shareUrl(status), text: 'ほかのアプリで送る' }),
-        h('button', { class: 'btn', type: 'button', onclick: () => copyText(url, status), text: 'URLをコピー' })),
-      h('p', { text: 'URLで開いた端末では、登録した区間は空の状態から始まります。区間ごと渡したいときは、下の「HTMLファイルで送る」を使ってください。' })));
+        h('button', { class: 'btn', type: 'button', onclick: () => copyText(url, status), text: 'URLをコピー' }))));
   } else {
     body.append(h('section', { class: 'share-sec' },
       h('h3', { text: 'スマホですぐブラウザで開く' }),
-      h('div', { class: 'notice', text: 'このページは端末の中のファイルとして開いているため、URLやQRコードでは渡せません。Web（GitHub Pages など）に置くと、QRコードを読むだけでスマホのブラウザで開けるようになります。' })));
+      h('div', { class: 'notice', text: 'ファイルとして開いているため、URL・QRコードでは渡せません。' })));
   }
 
   const chk = h('input', { type: 'checkbox', id: 'shareWithRoutes', checked: state.routes.length ? true : null, disabled: state.routes.length ? null : true });
   body.append(h('section', { class: 'share-sec' },
     h('h3', { text: 'HTMLファイルで送る・保存する' }),
-    h('p', { text: 'このアプリを1つのファイルにして、LINE やメールで送ったり、端末に保存したりします。' }),
     h('label', { class: 'check-row', for: 'shareWithRoutes' }, chk,
-      h('span', { text: `登録した区間（${state.routes.length}件）も入れる。駅すぱあとのアクセスキーは入れません。` })),
+      h('span', { text: `登録した区間（${state.routes.length}件）も入れる` })),
     h('div', { class: 'share-actions' },
       h('button', { class: 'btn btn-primary', type: 'button', onclick: () => shareFile(chk.checked, status), text: 'ファイルを送る（LINEなど）' }),
-      h('button', { class: 'btn', type: 'button', onclick: () => downloadFile(buildShareHtml(chk.checked), status), text: '端末に保存' })),
-    h('p', { text: '受け取った側の開き方：Android は LINE でファイルを開き「Chrome で開く」を選びます。iPhone は LINE やファイルアプリで開くとプレビュー表示になり、時刻を取得できないことがあります。iPhone では上の URL で開く方法が確実です。' })));
+      h('button', { class: 'btn', type: 'button', onclick: () => downloadFile(buildShareHtml(chk.checked), status), text: '端末に保存' }))));
   body.append(status);
 }
 $('#openShare').addEventListener('click', () => { renderShare(); openDialog(shareDlg); });
@@ -2515,7 +2524,6 @@ loadCache();
 tickClock();
 syncTimeUI();
 renderAll();
-$('#favPanel').open = false;
 refreshDue(false);
 refreshPosition(false);
 setInterval(tickClock, 1000);
