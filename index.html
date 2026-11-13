@@ -1,0 +1,1980 @@
+<!DOCTYPE html>
+<!--
+  駅・バス時刻確認アプリ
+  作成日時：2026年11月12日 22:22（JST）／更新：2026年11月13日（北鉄バス時刻表・時刻指定・番線・送る機能）
+  1ファイルで動くWebアプリです。登録内容はこのブラウザの localStorage に保存されます。
+  License: MIT（Transitous の利用方針に合わせ、ソースは自由に公開・改変できます）
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="時刻">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
+<title>駅・バス時刻</title>
+<style>
+:root{
+  --bg:#F8F9FA;
+  --surface:#FFFFFF;
+  --text:#1A1A1A;
+  --text-2:#4A4F55;
+  --text-3:#6B7075;
+  --line:#E3E6EA;
+  --line-2:#EEF0F2;
+  --field:#D5D9DE;
+  --accent:#4A90E2;          /* 装飾（線・フォーカス・矢印） */
+  --accent-strong:#2F6FB8;   /* 文字・ボタン（白地で読みやすい濃さ） */
+  --accent-weak:#EEF4FC;
+  --danger:#B3261E;
+  --warn-bg:#FFF8E6;
+  --warn-line:#F1E2B8;
+  --radius:12px;
+  --font:-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Yu Gothic", Meiryo, system-ui, sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:17px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--accent-strong)}
+[hidden]{display:none !important}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible{outline:3px solid rgba(74,144,226,.45);outline-offset:2px}
+
+/* ---------- 上部：現在時刻 ---------- */
+.top{
+  position:sticky;top:0;z-index:30;background:#FFFFFF;
+  border-bottom:1px solid var(--line);
+  padding:calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 16px) 10px calc(env(safe-area-inset-left) + 16px);
+}
+.top-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.app-name{font-size:13px;color:var(--text-3);letter-spacing:.04em}
+.clock{font-size:34px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.15;letter-spacing:.01em}
+.clock .sec{font-size:19px;color:var(--text-3);margin-left:2px;font-weight:500}
+.date{font-size:14px;color:var(--text-2)}
+.top-actions{display:flex;gap:8px}
+.icon-btn{
+  width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:#fff;
+  display:inline-grid;place-items:center;color:var(--text-2);padding:0;
+}
+.icon-btn:hover{background:var(--bg)}
+.icon-btn svg{width:22px;height:22px}
+.icon-btn.small{width:40px;height:40px}
+.icon-btn.small svg{width:19px;height:19px}
+.icon-btn.is-busy svg{animation:spin 1s linear infinite}
+
+main{max-width:1200px;margin:0 auto;padding:16px calc(env(safe-area-inset-right) + 16px) 8px calc(env(safe-area-inset-left) + 16px)}
+
+.banner{
+  border:1px solid var(--warn-line);background:var(--warn-bg);border-radius:10px;
+  padding:10px 14px;margin-bottom:14px;font-size:15px;color:var(--text);
+}
+
+/* ---------- パネル（区間追加・お気に入り） ---------- */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:14px}
+.panel > summary{
+  list-style:none;cursor:pointer;padding:12px 16px;min-height:52px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:600;
+}
+.panel > summary::-webkit-details-marker{display:none}
+.panel > summary .count{font-weight:500;color:var(--text-3);font-size:15px;margin-left:6px}
+.chev{width:18px;height:18px;color:var(--text-3);transition:transform .2s}
+.panel[open] > summary .chev{transform:rotate(180deg)}
+.panel-body{padding:2px 16px 16px}
+
+.pair{display:grid;grid-template-columns:1fr auto;gap:8px 10px;align-items:end}
+.pair .fields{display:grid;gap:12px}
+.swap-col{padding-bottom:4px}
+.swap-inline{display:none !important}
+@media (min-width:760px){
+  .pair{grid-template-columns:1fr}
+  .pair .fields{grid-template-columns:1fr auto 1fr;align-items:end}
+  .swap-col{display:none}
+  .swap-inline{display:inline-grid !important;margin-bottom:4px}
+}
+
+.field{position:relative}
+.field label{display:block;font-size:14px;color:var(--text-2);margin-bottom:4px}
+.input{
+  width:100%;font-size:17px;padding:11px 14px;min-height:48px;
+  border:1px solid var(--field);border-radius:10px;background:#fff;color:var(--text);
+  -webkit-appearance:none;appearance:none;
+}
+.input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(74,144,226,.18)}
+select.input{padding-right:36px;background-image:linear-gradient(45deg,transparent 50%,var(--text-3) 50%),linear-gradient(135deg,var(--text-3) 50%,transparent 50%);background-position:calc(100% - 20px) 21px,calc(100% - 14px) 21px;background-size:6px 6px;background-repeat:no-repeat}
+.field.is-selected .input{border-color:var(--accent);padding-right:40px}
+.field .check{position:absolute;right:12px;bottom:13px;width:22px;height:22px;color:var(--accent);display:none}
+.field.is-selected .check{display:block}
+.ac-list{
+  position:absolute;left:0;right:0;top:100%;margin:4px 0 0;padding:4px 0;list-style:none;
+  background:#fff;border:1px solid var(--line);border-radius:10px;max-height:320px;overflow:auto;z-index:40;
+  box-shadow:0 8px 20px rgba(0,0,0,.06);
+}
+.ac-list li{padding:9px 14px;cursor:pointer;line-height:1.4}
+.ac-list li[aria-selected="true"],.ac-list li:hover{background:var(--accent-weak)}
+.ac-name{font-weight:600}
+.ac-sub{font-size:13px;color:var(--text-3);display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;margin-top:2px}
+.ac-msg{padding:10px 14px;font-size:14px;color:var(--text-2);cursor:default}
+.ac-msg.error{color:var(--danger)}
+.chip{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:0 8px;color:var(--text-2);line-height:1.6}
+
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.row .grow{flex:1 1 220px}
+.btn{
+  font-size:16px;font-weight:600;border-radius:10px;padding:11px 18px;min-height:48px;
+  border:1px solid var(--line);background:#fff;color:var(--text);
+}
+.btn:hover{background:var(--bg)}
+.btn-primary{background:var(--accent-strong);border-color:var(--accent-strong);color:#fff}
+.btn-primary:hover{background:#2A64A6}
+.btn-primary:disabled{background:#C7D5E6;border-color:#C7D5E6;color:#fff;cursor:not-allowed}
+.btn-quiet{border-color:transparent;background:transparent;color:var(--accent-strong);padding-left:8px;padding-right:8px}
+.btn-danger{color:var(--danger)}
+.msg{font-size:14px;color:var(--text-2);min-height:1.4em;margin-top:8px}
+.msg.error{color:var(--danger)}
+.hint{font-size:13px;color:var(--text-3);margin-top:10px}
+
+.favs{list-style:none;margin:0;padding:0}
+.fav{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line-2)}
+.fav:first-child{border-top:0}
+.fav-name{font-weight:600;overflow-wrap:anywhere}
+.fav-sub{font-size:13px;color:var(--text-3)}
+.fav-actions{display:flex;gap:6px;flex-shrink:0}
+.fav-confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:15px}
+.empty-note{color:var(--text-3);font-size:15px;padding:4px 0}
+
+/* ---------- メイン：区間カード ---------- */
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;align-items:start}
+.board-empty{
+  grid-column:1/-1;background:#fff;border:1px dashed var(--field);border-radius:var(--radius);
+  padding:28px 20px;text-align:center;color:var(--text-2);
+}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.card-head{padding:14px 16px 10px;border-bottom:1px solid var(--line-2);display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.card-label{font-size:13px;color:var(--text-3);margin-bottom:1px}
+.route-title{font-size:19px;font-weight:700;line-height:1.35;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;overflow-wrap:anywhere}
+.route-title .arrow{color:var(--accent);font-weight:600}
+.card-meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:13px;color:var(--text-3);margin-top:4px}
+.tag{border:1px solid var(--line);border-radius:6px;padding:0 6px;font-size:12px;color:var(--text-2);line-height:1.6}
+.stale{font-size:13px;color:var(--danger);padding:8px 16px 0}
+
+.trips{list-style:none;margin:0;padding:0}
+.trip{padding:12px 16px 10px;border-top:1px solid var(--line-2)}
+.trip:first-child{border-top:0}
+.trip.first{box-shadow:inset 3px 0 0 var(--accent)}
+.trip-main{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.dep-wrap{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 8px}
+.day{font-size:13px;color:var(--text-2);border:1px solid var(--line);border-radius:6px;padding:0 6px;align-self:center}
+.dep-time{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
+.arr-time{font-size:15px;color:var(--text-2);font-variant-numeric:tabular-nums}
+.until{font-size:15px;font-weight:600;color:var(--accent-strong);white-space:nowrap}
+.until.soon{color:var(--danger)}
+.trip-sub{font-size:14px;color:var(--text-2);margin-top:2px}
+.trip-sub .sep{color:#B6BBC1;margin:0 6px}
+.trip-lines{font-size:15px;margin-top:2px;overflow-wrap:anywhere}
+.trip-lines .to-mark{color:var(--text-3);margin:0 4px}
+.trip-flags{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.flag{font-size:12px;border-radius:6px;padding:0 6px;line-height:1.7;border:1px solid var(--line);color:var(--text-2)}
+.flag.warn{border-color:#F0C9C6;color:var(--danger)}
+
+details.trip-detail{margin-top:4px}
+details.trip-detail > summary{list-style:none;display:inline-flex;align-items:center;gap:4px;font-size:14px;color:var(--accent-strong);cursor:pointer;padding:6px 0;min-height:36px}
+details.trip-detail > summary::-webkit-details-marker{display:none}
+details.trip-detail > summary .chev{width:14px;height:14px;color:var(--accent-strong)}
+details.trip-detail[open] > summary .chev{transform:rotate(180deg)}
+.legs{list-style:none;margin:4px 0 6px;padding:0}
+.leg{margin-left:5px;padding:6px 0 8px 14px;border-left:3px solid #CED3D9}
+.leg + .leg{margin-top:2px}
+.leg-head{font-weight:600;line-height:1.45;overflow-wrap:anywhere}
+.leg-head .mode{font-size:12px;font-weight:500;border:1px solid var(--line);border-radius:6px;padding:0 6px;margin-right:6px;color:var(--text-2);vertical-align:2px}
+.leg-namesub{font-size:13px;color:var(--text-3);font-weight:400}
+.leg-hs{font-size:14px;color:var(--text-2);margin-top:1px}
+.leg-stop{display:flex;align-items:baseline;gap:10px;font-size:15px;margin-top:4px;flex-wrap:wrap}
+.leg-stop .lt{font-variant-numeric:tabular-nums;font-weight:600;min-width:3.1em}
+.leg-stop .st{overflow-wrap:anywhere}
+.track{font-size:12.5px;color:var(--text-2);border:1px solid var(--line);border-radius:6px;padding:0 6px;line-height:1.7}
+.delay{font-size:13px;color:var(--danger)}
+.leg-walk{margin-left:5px;padding:4px 0 6px 14px;border-left:3px dotted #C3C8CE;color:var(--text-2);font-size:14px}
+.leg-agency{font-size:13px;color:var(--text-3);margin-top:3px}
+
+.state{padding:22px 16px;color:var(--text-2);font-size:15px;display:flex;gap:10px;align-items:flex-start}
+.state.error{color:var(--text)}
+.state .state-text{flex:1}
+.state .state-title{font-weight:600}
+.state .btn{margin-top:10px;min-height:42px;padding:8px 14px;font-size:15px}
+.ico-warn{width:20px;height:20px;color:var(--danger);flex-shrink:0;margin-top:2px}
+.spinner{width:18px;height:18px;border:2px solid #DDE2E7;border-top-color:var(--accent);border-radius:50%;display:inline-block;animation:spin .8s linear infinite;flex-shrink:0;margin-top:3px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spinner,.icon-btn.is-busy svg{animation-duration:2.4s}}
+
+/* ---------- 時刻の指定 ---------- */
+.timebar{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-bottom:14px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg-btn{border:0;background:transparent;border-radius:8px;min-height:42px;font-size:15px;font-weight:600;color:var(--text-2);padding:4px 6px;line-height:1.3}
+.seg-btn[aria-pressed="true"]{background:#fff;color:var(--accent-strong);box-shadow:0 0 0 1px var(--line)}
+.time-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.time-row .input{width:auto;flex:1 1 150px}
+.time-quick{display:flex;gap:6px;flex-wrap:wrap;flex-basis:100%}
+.btn-small{min-height:38px;padding:6px 12px;font-size:14px;font-weight:500}
+.day-type{font-size:14px;color:var(--text-2);flex-basis:100%}
+.mode-note{font-size:13px;color:var(--text-2);padding:8px 16px 0}
+
+/* ---------- 送る・開く ---------- */
+.share-sec{padding:12px 0;border-top:1px solid var(--line-2)}
+.share-sec:first-child{border-top:0}
+.share-sec h3{font-size:16px;margin:0 0 4px}
+.share-sec p{margin:4px 0 8px;font-size:14px;color:var(--text-2);line-height:1.6}
+.share-actions{display:flex;flex-wrap:wrap;gap:8px}
+.share-actions .btn{min-height:44px}
+a.btn{display:inline-flex;align-items:center;text-decoration:none}
+.qr-box{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.qr-box .qr{width:168px;height:168px;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff}
+.qr-box .qr svg{width:100%;height:100%;display:block}
+.url-text{font-size:13px;color:var(--text-2);word-break:break-all;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;margin-top:6px}
+.check-row{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:6px 0 8px}
+.check-row input{width:18px;height:18px;margin-top:3px;accent-color:var(--accent-strong)}
+.notice{border:1px solid var(--warn-line);background:var(--warn-bg);border-radius:10px;padding:8px 12px;font-size:14px;margin-bottom:8px}
+
+.track.none{color:var(--text-3);border-style:dashed}
+.dep-track{font-weight:600;color:var(--text)}
+.dep-track.none{font-weight:400;color:var(--text-3)}
+
+/* ---------- フッター ---------- */
+footer{max-width:1200px;margin:0 auto;padding:12px calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 28px) calc(env(safe-area-inset-left) + 16px);font-size:13px;color:var(--text-3);line-height:1.75}
+footer p{margin:4px 0}
+footer .disclaimer{color:var(--text-2)}
+
+/* ---------- 設定ダイアログ ---------- */
+dialog{
+  border:none;border-radius:16px;padding:0;width:min(560px,calc(100vw - 24px));
+  max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);background:#fff;color:var(--text);
+}
+dialog::backdrop{background:rgba(26,26,26,.28)}
+dialog.fallback-open{display:block;position:fixed;inset:16px;margin:auto;z-index:100;border:1px solid var(--line);overflow:auto}
+.dlg-head{position:sticky;top:0;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line-2);z-index:1}
+.dlg-head h2{font-size:18px;margin:0}
+.dlg-body{padding:6px 18px 8px;overflow:auto}
+.dlg-foot{position:sticky;bottom:0;background:#fff;display:flex;justify-content:flex-end;gap:10px;padding:12px 18px calc(env(safe-area-inset-bottom) + 12px);border-top:1px solid var(--line-2)}
+fieldset{border:0;margin:14px 0 0;padding:0}
+legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;display:block}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-top:8px;cursor:pointer}
+.opt:has(input:checked){border-color:var(--accent);background:var(--accent-weak)}
+.opt input{margin-top:5px;width:18px;height:18px;accent-color:var(--accent-strong);flex-shrink:0}
+.opt-text{display:block;line-height:1.45}
+.opt-title{font-weight:600;display:block}
+.opt-desc{font-size:13.5px;color:var(--text-2);line-height:1.6;display:block;margin-top:2px}
+.set-block{margin-top:16px}
+.set-note{font-size:13px;color:var(--text-3);margin-top:6px;line-height:1.6}
+.key-row{display:flex;gap:8px}
+.key-row .input{flex:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.danger-zone{margin-top:22px;padding-top:14px;border-top:1px solid var(--line-2)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div>
+      <div class="app-name">駅・バス時刻</div>
+      <div class="clock" id="clock" aria-label="現在時刻">--:--<span class="sec">:--</span></div>
+      <div class="date" id="date">&nbsp;</div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="openShare" type="button" aria-label="スマホへ送る・ブラウザで開く" title="送る・開く">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
+      </button>
+      <button class="icon-btn" id="refreshAll" type="button" aria-label="すべての区間を更新" title="すべて更新">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>
+      </button>
+      <button class="icon-btn" id="openSettings" type="button" aria-label="設定" title="設定">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="banners"></div>
+
+  <!-- 区間追加エリア -->
+  <details class="panel" id="addPanel">
+    <summary>
+      <span>＋ 区間を追加</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="pair">
+        <div class="fields">
+          <div class="field" id="fromField">
+            <label for="fromInput">出発（駅・バス停）</label>
+            <input class="input" id="fromInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
+                   placeholder="例：金沢" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="fromList">
+            <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+            <ul class="ac-list" id="fromList" role="listbox" hidden></ul>
+          </div>
+          <button class="icon-btn swap-inline" id="swapBtn2" type="button" aria-label="出発と到着を入れ替え" title="入れ替え">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>
+          </button>
+          <div class="field" id="toField">
+            <label for="toInput">到着（駅・バス停）</label>
+            <input class="input" id="toInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
+                   placeholder="例：富山" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="toList">
+            <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+            <ul class="ac-list" id="toList" role="listbox" hidden></ul>
+          </div>
+        </div>
+        <div class="swap-col">
+          <button class="icon-btn" id="swapBtn" type="button" aria-label="出発と到着を入れ替え" title="入れ替え">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 4v16l-3-3M16 20V4l3 3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field grow">
+          <label for="labelInput">名前（任意）</label>
+          <input class="input" id="labelInput" type="text" maxlength="30" autocomplete="off" placeholder="例：通勤（行き）">
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn btn-primary" id="addBtn" type="button" disabled>お気に入りに登録</button>
+        <span class="hint" id="providerHint" style="margin-top:0"></span>
+      </div>
+      <div class="msg" id="addMsg" role="status" aria-live="polite"></div>
+    </div>
+  </details>
+
+  <!-- お気に入り一覧 -->
+  <details class="panel" id="favPanel">
+    <summary>
+      <span>お気に入り<span class="count" id="favCount"></span></span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </summary>
+    <div class="panel-body">
+      <ul class="favs" id="favList"></ul>
+    </div>
+  </details>
+
+  <!-- 時刻の指定 -->
+  <section class="timebar" id="timebar" aria-label="表示する時刻">
+    <div class="seg" role="group" aria-label="時刻の指定">
+      <button type="button" class="seg-btn" data-mode="now" aria-pressed="true">今すぐ</button>
+      <button type="button" class="seg-btn" data-mode="dep" aria-pressed="false">出発時刻</button>
+      <button type="button" class="seg-btn" data-mode="arr" aria-pressed="false">到着時刻</button>
+    </div>
+    <div class="time-row" id="timeRow" hidden>
+      <label class="sr-only" for="dateInput">日付</label>
+      <input class="input" type="date" id="dateInput">
+      <label class="sr-only" for="timeInput">時刻</label>
+      <input class="input" type="time" id="timeInput" step="60">
+      <div class="time-quick">
+        <button type="button" class="btn btn-small" data-shift="-60">−1時間</button>
+        <button type="button" class="btn btn-small" data-shift="-10">−10分</button>
+        <button type="button" class="btn btn-small" data-shift="10">＋10分</button>
+        <button type="button" class="btn btn-small" data-shift="60">＋1時間</button>
+      </div>
+      <div class="day-type" id="dayTypeLabel" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- メイン表示エリア -->
+  <section class="board" id="board" aria-label="登録した区間の時刻"></section>
+</main>
+
+<footer id="footer"></footer>
+
+<!-- 設定 -->
+<dialog id="settings" aria-labelledby="settingsTitle">
+  <form id="settingsForm" method="dialog">
+    <div class="dlg-head">
+      <h2 id="settingsTitle">設定</h2>
+      <button class="icon-btn small" type="button" id="closeSettings" aria-label="閉じる">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="dlg-body">
+      <fieldset>
+        <legend>駅・バス停の検索に使うデータ</legend>
+        <label class="opt">
+          <input type="radio" name="provider" value="transitous">
+          <span class="opt-text"><span class="opt-title">Transitous（無料・キー不要）</span>
+          <span class="opt-desc">公開時刻表データ（GTFS）による経路検索です。日本ではJRなど一部の鉄道と、データを公開している路線バスのみが対象で、対象外の路線は検索できません。</span></span>
+        </label>
+        <label class="opt">
+          <input type="radio" name="provider" value="ekispert">
+          <span class="opt-text"><span class="opt-title">駅すぱあと API（アクセスキーが必要）</span>
+          <span class="opt-desc">全国の鉄道・バスに対応します。時刻表に基づく検索には、ダイヤ探索が使えるプラン（スタンダードプラン、90日無料評価版など）のキーが必要です。フリープランのキーでは使えません。</span></span>
+        </label>
+        <label class="opt">
+          <input type="radio" name="provider" value="demo">
+          <span class="opt-text"><span class="opt-title">デモ（架空のデータ）</span>
+          <span class="opt-desc">画面の見え方を確かめるための架空の駅・時刻です。実際の運行とは関係ありません。</span></span>
+        </label>
+        <p class="set-note">登録済みの区間は、登録したときのデータで表示します。</p>
+      </fieldset>
+
+      <div class="set-block">
+        <label class="set-label" for="keyInput">駅すぱあと API アクセスキー</label>
+        <div class="key-row">
+          <input class="input" id="keyInput" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="未設定">
+          <button class="btn" type="button" id="toggleKey">表示</button>
+        </div>
+        <p class="set-note">キーはこの端末のブラウザ内にだけ保存されます。</p>
+      </div>
+
+      <div class="set-block grid2">
+        <div>
+          <label class="set-label" for="countSel">各区間の表示件数</label>
+          <select class="input" id="countSel">
+            <option value="2">2件</option><option value="3">3件</option><option value="4">4件</option>
+            <option value="5">5件</option><option value="6">6件</option><option value="8">8件</option>
+          </select>
+        </div>
+        <div>
+          <label class="set-label" for="xferSel">乗換回数の上限</label>
+          <select class="input" id="xferSel">
+            <option value="">指定なし</option><option value="0">乗換なしのみ</option>
+            <option value="1">1回まで</option><option value="2">2回まで</option><option value="3">3回まで</option>
+          </select>
+        </div>
+      </div>
+      <p class="set-note">乗換回数の上限は Transitous とデモで使います。</p>
+
+      <div class="set-block">
+        <label class="set-label" for="contactInput">連絡先（任意）</label>
+        <input class="input" id="contactInput" type="text" autocomplete="off" placeholder="メールアドレスやWebサイトのURL">
+        <p class="set-note">このアプリをWebに公開して Transitous を使う場合、利用方針により連絡先の掲示が求められます。入力すると画面下に表示します。</p>
+      </div>
+
+      <div class="set-block">
+        <span class="set-label">北鉄バス（アプリ内の時刻表）</span>
+        <label class="opt" style="margin-top:0">
+          <input type="checkbox" id="campusBreak">
+          <span class="opt-text"><span class="opt-title">金沢大学の学期休み期間として表示する</span>
+          <span class="opt-desc">「学期休み期間、運休」の便を表示しません。授業期間中は外しておいてください。</span></span>
+        </label>
+        <p class="set-note" id="hkInfo"></p>
+      </div>
+
+      <div class="danger-zone">
+        <div id="wipeArea">
+          <button class="btn btn-danger" type="button" id="wipeBtn">登録内容をすべて消去</button>
+        </div>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn" type="button" id="cancelSettings">キャンセル</button>
+      <button class="btn btn-primary" type="submit" id="saveSettings">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- スマホへ送る・ブラウザで開く -->
+<dialog id="share" aria-labelledby="shareTitle">
+  <div class="dlg-head">
+    <h2 id="shareTitle">スマホへ送る・ブラウザで開く</h2>
+    <button class="icon-btn small" type="button" id="closeShare" aria-label="閉じる">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div class="dlg-body" id="shareBody"></div>
+  <div class="dlg-foot">
+    <button class="btn" type="button" id="closeShare2">閉じる</button>
+  </div>
+</dialog>
+
+<!-- 送られてきた区間（ファイルで送るときにここへ入れる） -->
+<script id="seedData" type="application/json"></script>
+
+<script>
+/*! qrcode-generator v1.4.4 | (c) 2009 Kazuhiko Arase | MIT License */
+var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1})},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(n*r,o*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(){var t=n("友");if(2!=t.length||38726!=(t[0]<<8|t[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)},function(t){"function"==typeof define&&define.amd?define([],t):"object"==typeof exports&&(module.exports=t())}(function(){return qrcode});
+</script>
+
+<script>
+'use strict';
+/* 起動直後のページをそのまま控える（「HTMLファイルで送る」で使う） */
+const SELF_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+/* =====================================================================
+   駅・バス時刻確認アプリ
+   作成日時：2026年11月12日 22:22（JST）
+   ===================================================================== */
+const APP = { name: '駅・バス時刻', created: '2026年11月12日 22:22', repo: 'https://github.com/Githitosh/ekibus' };
+const LS_KEY = 'ekibus.v1';
+const LS_CACHE = 'ekibus.cache.v1';
+const TZ_JP = 'Asia/Tokyo';
+const REQ_TIMEOUT = 20000;
+
+/* ---------- 小さな道具 ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  if (props) for (const [k, v] of Object.entries(props)) {
+    if (v == null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'text') el.textContent = v;
+    else if (k === 'dataset') Object.assign(el.dataset, v);
+    else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
+    else if (v === true) el.setAttribute(k, '');
+    else el.setAttribute(k, String(v));
+  }
+  for (const kid of kids.flat(Infinity)) {
+    if (kid == null || kid === false || kid === '') continue;
+    el.append(kid instanceof Node ? kid : String(kid));
+  }
+  return el;
+}
+function svg(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; }
+const ICON = {
+  refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>',
+  up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+  down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+  reverse: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  warn: '<svg class="ico-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v5M12 18v.01"/></svg>',
+  chev: '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>'
+};
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const arr = v => v == null ? [] : (Array.isArray(v) ? v : [v]);
+const txt = v => (v && typeof v === 'object') ? String(v.text || '') : (v == null ? '' : String(v));
+const zen2han = s => String(s || '').replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+function toDate(v) { if (!v) return null; const d = new Date(v); return isNaN(d) ? null : d; }
+function safeUrl(u) { try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ''; } catch { return ''; } }
+function hash(s) { let x = 2166136261; for (const c of s) { x ^= c.charCodeAt(0); x = Math.imul(x, 16777619); } return x >>> 0; }
+
+class AppError extends Error {
+  constructor(kind, message, extra = {}) { super(message); this.kind = kind; Object.assign(this, extra); }
+}
+function errText(e) {
+  if (!e) return '不明なエラーが発生しました。';
+  if (e instanceof AppError) return e.message;
+  return '処理中に問題が発生しました。（' + (e.message || e) + '）';
+}
+
+/* ---------- 時刻の表示 ---------- */
+const fmtHM = new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+const fmtHMS = new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+const fmtDate = new Intl.DateTimeFormat('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' });
+const fmtMD = new Intl.DateTimeFormat('ja-JP', { month: 'numeric', day: 'numeric' });
+const hm = d => d ? fmtHM.format(d) : '--:--';
+const dayKey = d => d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+function dayLabel(d, now) {
+  if (dayKey(d) === dayKey(now)) return '';
+  const t = new Date(now); t.setDate(t.getDate() + 1);
+  if (dayKey(d) === dayKey(t)) return '明日';
+  return fmtMD.format(d);
+}
+function durText(min) {
+  if (min == null || !isFinite(min)) return '';
+  min = Math.max(0, Math.round(min));
+  if (min < 60) return min + '分';
+  const hh = Math.floor(min / 60), mm = min % 60;
+  return mm ? `${hh}時間${mm}分` : `${hh}時間`;
+}
+function untilText(dep, now) {
+  const m = Math.floor((dep - now) / 60000);
+  if (m < 1) return 'まもなく';
+  return 'あと' + durText(m);
+}
+function jpParts(d) {
+  const o = {};
+  new Intl.DateTimeFormat('en-CA', { timeZone: TZ_JP, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+    .formatToParts(d).forEach(p => { o[p.type] = p.value; });
+  return { date: o.year + o.month + o.day, time: o.hour + o.minute };
+}
+
+/* ---------- 日本時間の日付と祝日 ---------- */
+function jstYMD(d) {
+  const o = {};
+  new Intl.DateTimeFormat('en-CA', { timeZone: TZ_JP, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(d).forEach(p => { o[p.type] = p.value; });
+  return { y: +o.year, m: +o.month, d: +o.day };
+}
+function addDaysYMD(v, k) { const t = new Date(Date.UTC(v.y, v.m - 1, v.d + k)); return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate() }; }
+const dowOf = v => new Date(Date.UTC(v.y, v.m - 1, v.d)).getUTCDay();
+function jstAt(v, hhmm) { const [hh, mm] = hhmm.split(':').map(Number); return new Date(Date.UTC(v.y, v.m - 1, v.d, hh - 9, mm)); }
+const holidayCache = new Map();
+function holidaysOf(y) {
+  if (holidayCache.has(y)) return holidayCache.get(y);
+  const s = new Set();
+  const key = (m, d) => `${m}-${d}`;
+  const nthMon = (m, n) => { const w = new Date(Date.UTC(y, m - 1, 1)).getUTCDay(); return 1 + ((8 - w) % 7) + (n - 1) * 7; };
+  const k = Math.floor((y - 1980) / 4);
+  [[1, 1], [1, nthMon(1, 2)], [2, 11], [2, 23], [3, Math.floor(20.8431 + 0.242194 * (y - 1980) - k)], [4, 29], [5, 3], [5, 4], [5, 5],
+   [7, nthMon(7, 3)], [8, 11], [9, nthMon(9, 3)], [9, Math.floor(23.2488 + 0.242194 * (y - 1980) - k)], [10, nthMon(10, 2)], [11, 3], [11, 23]]
+    .forEach(([m, d]) => s.add(key(m, d)));
+  const base = [...s];
+  // 振替休日（祝日が日曜なら、その後の最初の平日）
+  for (const kk of base) {
+    const [m, d] = kk.split('-').map(Number);
+    if (new Date(Date.UTC(y, m - 1, d)).getUTCDay() !== 0) continue;
+    let t = new Date(Date.UTC(y, m - 1, d + 1));
+    while (s.has(key(t.getUTCMonth() + 1, t.getUTCDate()))) t = new Date(t.getTime() + 86400000);
+    s.add(key(t.getUTCMonth() + 1, t.getUTCDate()));
+  }
+  // 国民の休日（祝日にはさまれた平日）
+  for (let t = Date.UTC(y, 0, 2); t < Date.UTC(y, 11, 31); t += 86400000) {
+    const c = new Date(t), p = new Date(t - 86400000), n = new Date(t + 86400000);
+    if (c.getUTCDay() === 0 || s.has(key(c.getUTCMonth() + 1, c.getUTCDate()))) continue;
+    if (s.has(key(p.getUTCMonth() + 1, p.getUTCDate())) && s.has(key(n.getUTCMonth() + 1, n.getUTCDate()))) s.add(key(c.getUTCMonth() + 1, c.getUTCDate()));
+  }
+  holidayCache.set(y, s);
+  return s;
+}
+const isHoliday = v => holidaysOf(v.y).has(`${v.m}-${v.d}`);
+/* 0=平日 1=土曜 2=日曜・祝日 */
+function dayType(v) { if (isHoliday(v)) return 2; const w = dowOf(v); return w === 0 ? 2 : w === 6 ? 1 : 0; }
+const DAYTYPE_JA = ['平日', '土曜', '日曜・祝日'];
+const DOW_JA = ['日', '月', '火', '水', '木', '金', '土'];
+
+/* ---------- 保存（localStorage） ---------- */
+const DEFAULT_SETTINGS = { provider: 'transitous', ekispertKey: '', perRoute: 4, maxTransfers: '', contact: '', campusBreak: false };
+const state = { settings: { ...DEFAULT_SETTINGS }, routes: [] };
+let storageOK = true;
+function storageAvailable() {
+  try { const k = '__ekibus_test__'; localStorage.setItem(k, '1'); localStorage.removeItem(k); return true; } catch { return false; }
+}
+function loadState() {
+  storageOK = storageAvailable();
+  if (!storageOK) return;
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    if (d && typeof d === 'object') {
+      state.settings = { ...DEFAULT_SETTINGS, ...(d.settings || {}) };
+      state.routes = Array.isArray(d.routes) ? d.routes.filter(r => r && r.id && r.from && r.to && r.from.id && r.to.id) : [];
+    }
+  } catch { /* 壊れたデータは無視 */ }
+  if (!PROVIDERS[state.settings.provider]) state.settings.provider = 'transitous';
+  state.settings.perRoute = Math.min(8, Math.max(2, parseInt(state.settings.perRoute, 10) || 4));
+}
+function saveState() {
+  if (!storageOK) return false;
+  try { localStorage.setItem(LS_KEY, JSON.stringify({ v: 1, settings: state.settings, routes: state.routes })); return true; }
+  catch { return false; }
+}
+function saveCache() {
+  if (!storageOK) return;
+  try {
+    const out = {};
+    for (const r of state.routes) {
+      const res = results.get(r.id);
+      if (res && res.qkey === 'now' && res.fetchedAt && res.trips && res.trips.length) out[r.id] = { fetchedAt: res.fetchedAt, note: res.note || '', trips: res.trips };
+    }
+    localStorage.setItem(LS_CACHE, JSON.stringify(out));
+  } catch { /* 容量不足などは無視 */ }
+}
+function loadCache() {
+  if (!storageOK) return;
+  try {
+    const d = JSON.parse(localStorage.getItem(LS_CACHE) || '{}');
+    for (const r of state.routes) {
+      const c = d[r.id];
+      if (!c || !Array.isArray(c.trips)) continue;
+      const trips = c.trips.map(reviveTrip).filter(Boolean);
+      results.set(r.id, { status: 'ok', trips, fetchedAt: c.fetchedAt || 0, note: c.note || '', error: null, ctrl: null, fromCache: true, qkey: 'now' });
+    }
+  } catch { /* 無視 */ }
+}
+function reviveTrip(t) {
+  if (!t) return null;
+  const rd = v => toDate(v);
+  const legs = arr(t.legs).map(l => ({
+    ...l, start: rd(l.start), end: rd(l.end),
+    from: l.from ? { ...l.from, time: rd(l.from.time), sched: rd(l.from.sched) } : {},
+    to: l.to ? { ...l.to, time: rd(l.to.time), sched: rd(l.to.sched) } : {}
+  }));
+  const trip = { ...t, legs, dep: rd(t.dep), arr: rd(t.arr), start: rd(t.start), end: rd(t.end) };
+  return trip.dep ? trip : null;
+}
+
+/* ---------- 通信 ---------- */
+async function getJSON(url, { signal } = {}) {
+  const ctrl = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; ctrl.abort(); }, REQ_TIMEOUT);
+  const onAbort = () => ctrl.abort();
+  if (signal) { if (signal.aborted) ctrl.abort(); else signal.addEventListener('abort', onAbort, { once: true }); }
+  let res;
+  try {
+    res = await fetch(url, { signal: ctrl.signal, cache: 'no-store', credentials: 'omit' });
+  } catch (e) {
+    if (timedOut) throw new AppError('timeout', 'サーバーから応答がありませんでした（時間切れ）。しばらくしてから更新してください。');
+    if (e && e.name === 'AbortError') throw e;
+    if (navigator.onLine === false) throw new AppError('offline', 'オフラインのため取得できませんでした。電波状況を確認してください。');
+    throw new AppError('network', 'サーバーに接続できませんでした。通信状態を確認するか、しばらくしてから更新してください。');
+  } finally {
+    clearTimeout(timer);
+    if (signal) signal.removeEventListener('abort', onAbort);
+  }
+  let body = null, raw = '';
+  try { raw = await res.text(); body = raw ? JSON.parse(raw) : null; } catch { body = null; }
+  if (!res.ok) throw new AppError('http', '', { status: res.status, body, raw });
+  if (body == null) throw new AppError('format', 'サーバーの応答を読み取れませんでした。');
+  return body;
+}
+
+/* =====================================================================
+   データの取得元（プロバイダー）
+   どれも同じ形のデータ（trip）を返す：
+   trip = { dep, arr, start, end, durationMin, transfers, legs:[...], key, flags:[] }
+   ===================================================================== */
+const TRANSIT_MODE_JA = {
+  BUS: 'バス', COACH: '高速バス', TRAM: '路面電車', SUBWAY: '地下鉄', METRO: '地下鉄',
+  RAIL: '電車', REGIONAL_RAIL: '電車', REGIONAL_FAST_RAIL: '快速・特急', SUBURBAN: '電車',
+  HIGHSPEED_RAIL: '新幹線', LONG_DISTANCE: '特急・長距離列車', NIGHT_RAIL: '夜行列車',
+  FERRY: '船', AIRPLANE: '飛行機', FUNICULAR: 'ケーブルカー',
+  AERIAL_LIFT: 'ロープウェイ', AREAL_LIFT: 'ロープウェイ', CABLE_CAR: 'ロープウェイ',
+  ODM: 'デマンド交通', FLEX: 'デマンド交通', RIDE_SHARING: '相乗り', OTHER: '交通機関', TRANSIT: '交通機関'
+};
+const STREET_MODES = new Set(['WALK', 'BIKE', 'CAR', 'RENTAL', 'CAR_PARKING', 'CAR_DROPOFF']);
+const isTrainMode = m => /電車|新幹線|特急|列車|地下鉄|快速|路面|ケーブル/.test(m || '');
+
+function headsignText(hs) {
+  hs = String(hs || '').trim();
+  if (!hs) return '';
+  return /(行|行き|ゆき|方面|循環|まわり|回り)$/.test(hs) ? hs : hs + ' 行';
+}
+function trackText(no, mode) {
+  no = zen2han(String(no || '').trim());
+  if (!no) return '';
+  if (/^\d+[A-Za-z]?$/.test(no)) return isTrainMode(mode) ? no + '番線' : no + '番のりば';
+  return no;
+}
+function makeTrip({ legs, start, end, transfers, flags = [] }) {
+  const transit = legs.filter(l => l.kind === 'transit');
+  if (!transit.length) return null;
+  const dep = transit[0].from.time || start;
+  const arrv = transit[transit.length - 1].to.time || end;
+  if (!dep) return null;
+  const s = start || dep, e = end || arrv;
+  const durationMin = (s && e) ? (e - s) / 60000 : null;
+  const tr = Number.isFinite(transfers) ? transfers : Math.max(0, transit.length - 1);
+  const key = dep.toISOString() + '|' + transit.map(l => l.name).join('>') + '|' + (arrv ? arrv.toISOString() : '');
+  if (transit.some(l => l.cancelled)) flags.push({ text: '運休を含む', warn: true });
+  if (transit.some(l => l.delayMin > 0)) flags.push({ text: '遅れあり', warn: true });
+  return { dep, arr: arrv, start: s, end: e, durationMin, transfers: tr, legs, key, flags };
+}
+function dedupeTrips(trips) {
+  const byKey = new Map();
+  for (const t of trips) {
+    if (!t || !t.dep) continue;
+    // 同じ便（出発時刻＋最初の路線）は、早く着く方を残す
+    const first = t.legs.find(l => l.kind === 'transit');
+    const k = t.dep.getTime() + '|' + (first ? first.name : '');
+    const prev = byKey.get(k);
+    if (!prev || (t.arr && prev.arr && t.arr < prev.arr) || (t.arr && prev.arr && +t.arr === +prev.arr && t.transfers < prev.transfers)) byKey.set(k, t);
+  }
+  return [...byKey.values()].sort((a, b) => a.dep - b.dep || (a.arr - b.arr));
+}
+const futureTrips = (trips, now) => (trips || []).filter(t => t.dep && t.dep.getTime() >= now.getTime() - 15000);
+/* arriveBy=false：at 以降に出発する便を早い順に count 本
+   arriveBy=true ：at までに着く便のうち遅い方から count 本（表示は出発の早い順） */
+function pickTrips(trips, at, arriveBy, count) {
+  if (arriveBy) return (trips || []).filter(t => t.arr && t.arr.getTime() <= at.getTime()).sort((a, b) => a.dep - b.dep).slice(-count);
+  return futureTrips(trips, at).slice(0, count);
+}
+
+/* ---------- Transitous（MOTIS 2 API） ---------- */
+const Transitous = {
+  id: 'transitous', label: 'Transitous', base: 'https://api.transitous.org',
+  ready() { return true; },
+  async searchStops(text, { signal, near } = {}) {
+    const p = new URLSearchParams({ text, type: 'STOP', language: 'ja', numResults: '10' });
+    if (near && isFinite(near.lat) && isFinite(near.lon)) p.set('place', `${near.lat},${near.lon}`);
+    let data;
+    try { data = await getJSON(`${this.base}/api/v1/geocode?${p}`, { signal }); }
+    catch (e) { throw this.wrap(e); }
+    if (!Array.isArray(data)) throw new AppError('format', '検索結果の形式が想定と異なります。');
+    return data.filter(m => m && m.id && m.name).map(m => ({
+      id: String(m.id), name: String(m.name), lat: m.lat, lon: m.lon,
+      sub: areaText(m.areas), kinds: modeKinds(m.modes)
+    }));
+  },
+  async plan(route, { at, arriveBy, count, signal }) {
+    const p = new URLSearchParams({
+      fromPlace: route.from.id, toPlace: route.to.id, time: at.toISOString(),
+      numItineraries: String(Math.max(count, 3)), searchWindow: '5400', timetableView: 'true',
+      detailedLegs: 'false', detailedTransfers: 'false', language: 'ja'
+    });
+    const mt = state.settings.maxTransfers;
+    if (mt !== '' && mt != null) p.set('maxTransfers', String(mt));
+    if (arriveBy) p.set('arriveBy', 'true');
+    let data = await this.call(p, signal);
+    let trips = this.parse(data);
+    const cur = arriveBy ? 'previousPageCursor' : 'nextPageCursor';
+    const enough = list => pickTrips(dedupeTrips(list), at, arriveBy, count).length >= count;
+    for (let i = 0; i < 2 && data && data[cur] && !enough(trips); i++) {
+      const p2 = new URLSearchParams(p); p2.set('pageCursor', data[cur]);
+      data = await this.call(p2, signal);
+      trips = trips.concat(this.parse(data));
+    }
+    return { trips: dedupeTrips(trips) };
+  },
+  async call(p, signal) {
+    try { return await getJSON(`${this.base}/api/v6/plan?${p}`, { signal }); }
+    catch (e) {
+      if (e instanceof AppError && e.kind === 'http' && e.status === 404 && !(e.body && e.body.error)) {
+        try { return await getJSON(`${this.base}/api/v5/plan?${p}`, { signal }); } catch (e2) { throw this.wrap(e2); }
+      }
+      throw this.wrap(e);
+    }
+  },
+  wrap(e) {
+    if (!(e instanceof AppError) || e.kind !== 'http') return e;
+    const detail = e.body && e.body.error ? `（${e.body.error}）` : '';
+    if (e.status === 429) return new AppError('http', 'Transitous へのアクセスが集中しています。少し時間をおいてから更新してください。', { status: e.status });
+    if (e.status === 400 || e.status === 422) return new AppError('http', '検索条件を受け付けてもらえませんでした' + detail + '。区間を登録し直すと直る場合があります。', { status: e.status });
+    if (e.status === 404) return new AppError('http', '駅・バス停が見つかりませんでした' + detail + '。データ更新でIDが変わった可能性があります。区間を登録し直してください。', { status: e.status });
+    if (e.status >= 500) return new AppError('http', 'Transitous のサーバーで問題が起きています（' + e.status + '）。しばらくしてから更新してください。', { status: e.status });
+    return new AppError('http', 'Transitous から取得できませんでした（' + e.status + '）' + detail + '。', { status: e.status });
+  },
+  parse(data) {
+    const its = data && Array.isArray(data.itineraries) ? data.itineraries : [];
+    return its.map(it => {
+      const legs = arr(it.legs).map(lg => {
+        const start = toDate(lg.startTime), end = toDate(lg.endTime);
+        if (STREET_MODES.has(lg.mode)) {
+          const sec = Number.isFinite(lg.duration) ? lg.duration : (start && end ? (end - start) / 1000 : 0);
+          return { kind: 'walk', mode: lg.mode === 'WALK' ? '徒歩' : '移動', minutes: Math.max(1, Math.round(sec / 60)), from: { name: lg.from && lg.from.name || '' }, to: { name: lg.to && lg.to.name || '' }, start, end };
+        }
+        const mode = TRANSIT_MODE_JA[lg.mode] || '交通機関';
+        const sStart = toDate(lg.scheduledStartTime) || start, sEnd = toDate(lg.scheduledEndTime) || end;
+        const names = lineNames(lg);
+        const delayMin = (start && sStart) ? Math.round((start - sStart) / 60000) : 0;
+        return {
+          kind: 'transit', mode, name: names.name, nameSub: names.sub,
+          headsign: headsignText(lg.headsign), agency: lg.agencyName || '', agencyUrl: safeUrl(lg.agencyUrl),
+          color: /^[0-9A-Fa-f]{6}$/.test(lg.routeColor || '') ? '#' + lg.routeColor : '',
+          from: { name: lg.from && lg.from.name || '', time: start, sched: sStart, track: trackText(lg.from && (lg.from.track || lg.from.scheduledTrack), mode) },
+          to: { name: lg.to && lg.to.name || '', time: end, sched: sEnd, track: trackText(lg.to && (lg.to.track || lg.to.scheduledTrack), mode) },
+          realtime: !!lg.realTime, delayMin: lg.realTime ? delayMin : 0, cancelled: !!lg.cancelled,
+          stops: Array.isArray(lg.intermediateStops) ? lg.intermediateStops.length : null
+        };
+      });
+      return makeTrip({ legs, start: toDate(it.startTime), end: toDate(it.endTime), transfers: it.transfers });
+    }).filter(Boolean);
+  }
+};
+function lineNames(lg) {
+  const clean = s => String(s || '').trim();
+  const ds = clean(lg.displayName), sn = clean(lg.routeShortName), ln = clean(lg.routeLongName), ts = clean(lg.tripShortName);
+  const name = ds || sn || ln || ts || clean(lg.agencyName) || '（路線名なし）';
+  let sub = '';
+  if (ln && ln !== name && !name.includes(ln)) sub = ln;
+  else if (ts && ts !== name && !name.includes(ts)) sub = ts;
+  return { name, sub };
+}
+function areaText(areas) {
+  if (!Array.isArray(areas) || !areas.length) return '';
+  const out = [];
+  const d = areas.find(a => a && a.default), u = areas.find(a => a && a.unique);
+  if (d && d.name) out.push(d.name);
+  if (u && u !== d && u.name) out.push(u.name);
+  if (!out.length) {
+    const s = areas.filter(a => a && a.name).sort((a, b) => (b.adminLevel || 0) - (a.adminLevel || 0));
+    if (s[0]) out.push(s[0].name);
+  }
+  return [...new Set(out)].join('・');
+}
+function modeKinds(modes) {
+  const set = new Set();
+  for (const m of arr(modes)) {
+    const ja = TRANSIT_MODE_JA[m];
+    if (!ja) continue;
+    set.add(ja === 'バス' || ja === '高速バス' ? 'バス' : (isTrainMode(ja) ? '鉄道' : ja));
+  }
+  return [...set];
+}
+
+/* ---------- 駅すぱあと API ---------- */
+const Ekispert = {
+  id: 'ekispert', label: '駅すぱあと API', base: 'https://api.ekispert.jp',
+  ready() { return !!String(state.settings.ekispertKey || '').trim(); },
+  key() {
+    const k = String(state.settings.ekispertKey || '').trim();
+    if (!k) throw new AppError('config', '駅すぱあと API のアクセスキーが設定されていません。右上の設定から入力してください。');
+    return k;
+  },
+  async get(path, params, signal) {
+    const p = new URLSearchParams({ key: this.key(), ...params });
+    let data;
+    try { data = await getJSON(`${this.base}${path}?${p}`, { signal }); }
+    catch (e) {
+      if (!(e instanceof AppError) || e.kind !== 'http') throw e;
+      const er = e.body && e.body.ResultSet && e.body.ResultSet.Error;
+      const m = er ? (txt(er.Message) || txt(er.message) || '') : '';
+      const detail = m ? `（${m}）` : '';
+      if (e.status === 401 || e.status === 403) throw new AppError('auth', 'アクセスキーが正しくないか、この機能を使う権限がありません' + detail + '。設定のキーとご契約のプランを確認してください。');
+      if (e.status === 429) throw new AppError('http', 'アクセスの上限に達しました' + detail + '。しばらくしてから更新してください。', { status: e.status });
+      if (e.status === 400) throw new AppError('http', '検索条件を受け付けてもらえませんでした' + detail + '。', { status: e.status });
+      if (e.status >= 500) throw new AppError('http', '駅すぱあと API のサーバーで問題が起きています（' + e.status + '）。', { status: e.status });
+      throw new AppError('http', '駅すぱあと API から取得できませんでした（' + e.status + '）' + detail + '。', { status: e.status });
+    }
+    const er = data && data.ResultSet && data.ResultSet.Error;
+    if (er) throw new AppError('http', '駅すぱあと API がエラーを返しました（' + (txt(er.Message) || txt(er.code) || '詳細不明') + '）。');
+    return data;
+  },
+  async searchStops(text, { signal } = {}) {
+    const data = await this.get('/v1/json/station/light', { name: text, type: 'train:bus' }, signal);
+    return arr(data && data.ResultSet && data.ResultSet.Point).map(pt => {
+      const st = (pt && pt.Station) || {};
+      const t = txt(st.Type);
+      const kind = t === 'bus' ? 'バス停' : t === 'train' ? '駅' : t === 'plane' ? '空港' : t === 'ship' ? '港' : '';
+      return { id: String(st.code || ''), name: String(st.Name || ''), sub: (pt.Prefecture && pt.Prefecture.Name) || '', kinds: kind ? [kind] : [] };
+    }).filter(x => x.id && x.name);
+  },
+  async plan(route, { at, arriveBy, count, signal }) {
+    const all = [];
+    let t = at, sawPlain = false;
+    for (let i = 0; i < 3; i++) {
+      const { date, time } = jpParts(t);
+      const data = await this.get('/v1/json/search/course/extreme', {
+        viaList: `${route.from.id}:${route.to.id}`, date, time, searchType: arriveBy ? 'arrival' : 'departure',
+        answerCount: String(Math.min(20, Math.max(count + 1, 5)))
+      }, signal);
+      const courses = arr(data && data.ResultSet && data.ResultSet.Course);
+      if (!courses.length) break;
+      for (const c of courses) {
+        if (c && c.dataType === 'plain') { sawPlain = true; continue; }
+        const trip = this.course(c);
+        if (trip) all.push(trip);
+      }
+      const sel = pickTrips(dedupeTrips(all), at, arriveBy, 99);
+      if (sel.length >= count || !sel.length) break;
+      t = arriveBy ? new Date(sel[0].arr.getTime() - 60000) : new Date(sel[sel.length - 1].dep.getTime() + 60000);
+    }
+    if (!all.length && sawPlain) throw new AppError('plan', '時刻表に基づく結果を取得できませんでした。ダイヤ探索に対応したプラン（スタンダードプラン、評価版など）のアクセスキーが必要です。');
+    return { trips: dedupeTrips(all) };
+  },
+  course(c) {
+    const r = c && c.Route;
+    if (!r) return null;
+    const lines = arr(r.Line), pts = arr(r.Point);
+    let approx = false;
+    const legs = lines.map((ln, i) => {
+      const type = txt(ln.Type);
+      const detail = (ln.Type && typeof ln.Type === 'object') ? String(ln.Type.detail || '') : '';
+      const fp = pts[i] || {}, tp = pts[i + 1] || {};
+      const dep = toDate(ln.DepartureState && ln.DepartureState.Datetime && txt(ln.DepartureState.Datetime));
+      const arv = toDate(ln.ArrivalState && ln.ArrivalState.Datetime && txt(ln.ArrivalState.Datetime));
+      const fromName = ptName(fp), toName = ptName(tp);
+      if (type === 'walk') {
+        return { kind: 'walk', mode: '徒歩', minutes: parseInt(ln.timeOnBoard, 10) || (dep && arv ? Math.round((arv - dep) / 60000) : null), from: { name: fromName }, to: { name: toName }, start: dep, end: arv };
+      }
+      if (txt(ln.TimeReliability) && txt(ln.TimeReliability) !== 'onTimetable') approx = true;
+      const rawName = zen2han(ln.Name || '');
+      const dest = zen2han(txt(ln.Destination));
+      let name = rawName;
+      if (dest) name = name.replace(new RegExp('[・･]?' + dest.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(行|行き)$'), '');
+      const mode = ekiMode(type, detail, rawName);
+      return {
+        kind: 'transit', mode, name: name || rawName || '（路線名なし）', nameSub: '',
+        headsign: dest ? headsignText(dest) : '', agency: '', agencyUrl: '',
+        color: ekiColor(ln.Color),
+        from: { name: fromName, time: dep, sched: dep, track: trackText(ln.DepartureState && ln.DepartureState.no, mode) },
+        to: { name: toName, time: arv, sched: arv, track: trackText(ln.ArrivalState && ln.ArrivalState.no, mode) },
+        realtime: false, delayMin: 0, cancelled: false,
+        stops: ln.stopStationCount != null ? parseInt(ln.stopStationCount, 10) : null
+      };
+    });
+    if (legs.some(l => l.kind === 'transit' && !l.from.time)) return null; // 時刻のない結果（平均待ち時間）は使わない
+    const flags = approx ? [{ text: '一部は平均時刻', warn: false }] : [];
+    const first = legs.find(l => l.start || (l.from && l.from.time));
+    const lastWithTime = [...legs].reverse().find(l => l.end || (l.to && l.to.time));
+    const start = first ? (first.start || first.from.time) : null;
+    const end = lastWithTime ? (lastWithTime.end || lastWithTime.to.time) : null;
+    return makeTrip({ legs, start, end, transfers: parseInt(r.transferCount, 10), flags });
+  }
+};
+function ptName(pt) { return zen2han((pt && pt.Station && pt.Station.Name) || (pt && pt.Name) || ''); }
+function ekiMode(type, detail, name) {
+  if (type === 'train') {
+    if (detail === 'shinkansen' || /新幹線/.test(name)) return '新幹線';
+    if (detail === 'limitedExpress' || /特急/.test(name)) return '特急';
+    if (/地下鉄|メトロ/.test(name)) return '地下鉄';
+    return '電車';
+  }
+  if (type === 'bus') return /highway|express/i.test(detail) || /高速/.test(name) ? '高速バス' : 'バス';
+  if (type === 'plane') return '飛行機';
+  if (type === 'ship') return '船';
+  return '交通機関';
+}
+function ekiColor(c) {
+  c = String(c || '');
+  if (!/^\d{9}$/.test(c)) return '';
+  const [r, g, b] = [c.slice(0, 3), c.slice(3, 6), c.slice(6, 9)].map(x => Math.min(255, parseInt(x, 10)));
+  return `rgb(${r},${g},${b})`;
+}
+
+/* ---------- デモ（架空のデータ） ---------- */
+const Demo = {
+  id: 'demo', label: 'デモ', base: '',
+  ready() { return true; },
+  stops: [
+    { id: 'demo-1', name: 'みなと中央', kinds: ['鉄道', 'バス'] },
+    { id: 'demo-2', name: 'さくら台', kinds: ['鉄道'] },
+    { id: 'demo-3', name: '北口ターミナル', kinds: ['鉄道', 'バス'] },
+    { id: 'demo-4', name: '市役所前', kinds: ['バス'] },
+    { id: 'demo-5', name: '大学病院前', kinds: ['バス'] },
+    { id: 'demo-6', name: 'みどり公園', kinds: ['鉄道'] }
+  ],
+  async searchStops(text) {
+    await sleep(120);
+    const q = String(text || '').trim();
+    const hit = this.stops.filter(s => s.name.includes(q));
+    return (hit.length ? hit : this.stops).map(s => ({ ...s, sub: '架空の停留所（デモ）' }));
+  },
+  async plan(route, { at, arriveBy, count }) {
+    await sleep(350);
+    const now = arriveBy ? new Date(at.getTime() - 4 * 3600000) : at;
+    const seed = hash(route.from.id + '>' + route.to.id);
+    const head = [8, 10, 12, 15, 20][seed % 5];
+    const off = seed % head;
+    const ride = 9 + (seed % 23);
+    const withTransfer = (seed % 3 === 0) && state.settings.maxTransfers !== '0';
+    const hub = this.stops.find(s => s.id !== route.from.id && s.id !== route.to.id && s.kinds.includes('バス')) || this.stops[2];
+    const fromIsBus = /前$/.test(route.from.name);
+    const trips = [];
+    let t = new Date(now.getTime() + 60000); t.setSeconds(0, 0);
+    const done = () => arriveBy ? (trips.length && trips[trips.length - 1].arr > at) : trips.length >= count;
+    for (let guard = 0; !done() && guard < 3000; guard++, t = new Date(t.getTime() + 60000)) {
+      const mins = t.getHours() * 60 + t.getMinutes();
+      if (mins < 330 || ((mins - off) % head) !== 0) continue;
+      const m = d => new Date(t.getTime() + d * 60000);
+      let legs;
+      if (!withTransfer) {
+        const mode = fromIsBus ? 'バス' : '電車';
+        legs = [{ kind: 'transit', mode, name: fromIsBus ? '市内循環バス 3系統' : 'みなと線 各駅停車', nameSub: '', headsign: headsignText(route.to.name), agency: '架空交通（デモ）', agencyUrl: '', color: '',
+          from: { name: route.from.name, time: t, sched: t, track: trackText(fromIsBus ? '3' : '2', mode) },
+          to: { name: route.to.name, time: m(ride), sched: m(ride), track: '' }, realtime: false, delayMin: 0, cancelled: false, stops: 3 + seed % 6 }];
+      } else {
+        const a = Math.max(5, Math.round(ride * 0.55)), wait = 4 + (mins % 5), b = Math.max(5, ride - a);
+        legs = [
+          { kind: 'transit', mode: '電車', name: 'みなと線 快速', nameSub: '', headsign: headsignText(hub.name), agency: '架空交通（デモ）', agencyUrl: '', color: '',
+            from: { name: route.from.name, time: t, sched: t, track: '1番線' }, to: { name: hub.name, time: m(a), sched: m(a), track: '4番線' }, realtime: false, delayMin: 0, cancelled: false, stops: 2 },
+          { kind: 'walk', mode: '徒歩', minutes: 3, from: { name: hub.name }, to: { name: hub.name + '（バス）' }, start: m(a), end: m(a + 3) },
+          { kind: 'transit', mode: 'バス', name: '大学線バス 12系統', nameSub: '', headsign: headsignText(route.to.name), agency: '架空交通（デモ）', agencyUrl: '', color: '',
+            from: { name: hub.name, time: m(a + wait), sched: m(a + wait), track: '5番のりば' }, to: { name: route.to.name, time: m(a + wait + b), sched: m(a + wait + b), track: '' }, realtime: false, delayMin: 0, cancelled: false, stops: 6 }
+        ];
+      }
+      const trip = makeTrip({ legs, start: t, end: legs[legs.length - 1].to.time, transfers: withTransfer ? 1 : 0, flags: [] });
+      if (trip) trips.push(trip);
+    }
+    return { trips };
+  }
+};
+
+/* ---------- 北鉄バス（アプリ内の時刻表） ----------
+   北陸鉄道「時刻・運賃検索」（令和8年10月1日改正）の発着指定検索の結果から作成。
+   1便 = [出発, 到着, 系統, 経由, 行先, 乗り場, 降り場, 運賃, 注記番号, 別の乗り場] */
+const HOKUTETSU = {"name":"北陸鉄道（北鉄バス）","rev":"2026-10-01","revLabel":"令和8年10月1日改正","fetched":"2026-11-13","url":"https://arj.hokutetsu.co.jp/timetable/pathway.php","stops":[{"name":"金沢大学自然研前","yomi":"かなざわだいがくしぜんけんまえ","alias":["自然研","金大","金沢大学","角間","自然研前"]},{"name":"金沢駅","yomi":"かなざわえき","alias":["金沢駅東口","兼六園口"]},{"name":"武蔵ヶ辻・近江町市場","yomi":"むさしがつじおうみちょういちば","alias":["武蔵","近江町","むさし"]},{"name":"香林坊","yomi":"こうりんぼう","alias":[]},{"name":"兼六園下・金沢城","yomi":"けんろくえんしたかなざわじょう","alias":["兼六園","金沢城"]},{"name":"東金沢駅","yomi":"ひがしかなざわえき","alias":[]},{"name":"西金沢","yomi":"にしかなざわ","alias":["西金沢駅"]}],"lines":{"93":"金沢大学線","94":"金沢大学線","97":"金沢大学線","53":"西金沢線","96":"西金沢線","99":"東金沢金大線"},"colors":{"94":"#fff200","93":"#fff200","97":"#fff200","53":"#2e3092","96":"#fff200","99":"#fff200"},"notes":["","学期休み期間、運休"],"pairs":{"金沢大学自然研前>金沢駅":[[["10:28","11:06","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["10:46","11:24","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["11:44","12:22","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["12:19","12:57","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["12:42","13:20","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["13:04","13:42","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["13:14","13:52","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["14:01","14:39","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["14:17","14:55","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["14:47","15:27","94","旭町","金沢駅","Aのりば","東口降車場",390,1],["14:57","15:37","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,1],["15:04","15:44","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["15:47","16:27","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["16:23","17:03","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["16:39","17:19","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["16:47","17:27","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["17:04","17:44","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["17:37","18:17","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["18:19","18:58","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["18:24","19:03","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["18:29","19:09","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["18:43","19:19","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["19:34","20:10","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["19:44","20:20","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["20:18","20:55","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["20:29","21:06","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["20:38","21:15","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["20:52","21:29","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["21:33","22:10","94","旭町","金沢駅","Aのりば","東口降車場",390,0]],[["10:44","11:24","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["11:29","12:09","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["11:59","12:39","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["12:43","13:23","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["13:54","14:34","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["14:44","15:24","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["15:29","16:09","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["16:16","16:56","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["17:14","17:54","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["17:34","18:14","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["17:49","18:29","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["18:46","19:23","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["18:56","19:33","94","旭町","金沢駅","Aのりば","東口降車場",390,0],["19:43","20:20","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0],["20:43","21:20","93","鈴見台二丁目","金沢駅","Aのりば","東口降車場",390,0]],1],"金沢駅>金沢大学自然研前":[[["07:32","08:06","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["07:37","08:02","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["07:42","08:16","94","旭町","金沢大学","東口8番のりば","Aのりば",390,1],["07:45","08:10","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["08:07","08:38","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["08:27","09:00","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["08:42","09:15","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["09:07","09:37","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["09:22","09:53","97","鈴見町","金沢大学","東口8番のりば","Aのりば",390,0],["09:27","10:00","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["09:32","10:03","97","鈴見町","金沢大学","東口8番のりば","Aのりば",390,0],["09:47","10:20","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["10:22","10:55","94","旭町","金沢大学","東口8番のりば","Aのりば",390,1],["10:47","11:20","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["11:12","11:43","97","鈴見町","金沢大学","東口8番のりば","Aのりば",390,0],["11:22","11:55","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["11:47","12:20","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["12:12","12:45","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["13:07","13:40","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["13:22","13:52","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["13:47","14:17","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,1],["13:52","14:25","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["14:27","15:00","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["14:52","15:22","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["15:17","15:50","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["15:27","15:57","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["15:52","16:22","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["16:07","16:40","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["16:37","17:07","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["17:27","17:58","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["17:52","18:23","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["18:27","18:58","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["18:47","19:20","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["19:22","19:52","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["19:37","20:05","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0]],[["07:27","07:58","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["07:52","08:20","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["08:32","09:03","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["09:12","09:42","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["09:42","10:15","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["10:32","11:02","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["10:52","11:22","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["11:42","12:12","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["12:52","13:22","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["13:42","14:12","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["14:32","15:02","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["15:22","15:52","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["16:12","16:45","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0],["16:52","17:22","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["17:47","18:17","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["18:52","19:22","93","鈴見台二丁目","金沢大学","東口8番のりば","Aのりば",390,0],["19:47","20:16","94","旭町","金沢大学","東口8番のりば","Aのりば",390,0]],1],"金沢大学自然研前>武蔵ヶ辻・近江町市場":[[["10:28","10:53","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["10:46","11:09","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["11:44","12:09","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["12:19","12:44","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["12:42","13:07","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["13:04","13:29","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["13:14","13:39","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["14:01","14:26","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["14:17","14:40","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["14:47","15:12","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,1],["14:57","15:20","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,1],["15:04","15:29","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["15:47","16:11","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["16:23","16:47","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["16:39","17:03","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["16:47","17:15","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["17:04","17:32","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["17:37","18:01","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["18:19","18:46","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["18:24","18:47","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["18:29","18:56","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["18:43","19:05","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["19:34","19:58","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["19:44","20:08","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["20:18","20:41","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["20:29","20:50","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["20:38","21:01","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["20:52","21:15","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["21:33","21:56","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0]],[["10:44","11:07","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["11:29","11:52","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["11:59","12:24","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["12:43","13:06","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["13:54","14:17","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["14:44","15:07","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["15:29","15:52","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["16:16","16:39","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["17:14","17:39","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["17:34","17:59","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["17:49","18:12","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["18:46","19:07","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["18:56","19:19","94","旭町","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["19:43","20:04","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0],["20:43","21:04","93","鈴見台二丁目","金沢駅","Aのりば","⑤金沢エムザ黒門小路前",390,0]],1],"武蔵ヶ辻・近江町市場>金沢大学自然研前":[[["07:38","08:06","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["07:42","08:02","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["07:48","08:16","94","旭町","金沢大学","②いちば館前","Aのりば",390,1],["07:50","08:10","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["08:13","08:38","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["08:33","09:00","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["08:48","09:15","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["09:13","09:37","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["09:28","09:53","97","鈴見町","金沢大学","②いちば館前","Aのりば",390,0],["09:33","10:00","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["09:38","10:03","97","鈴見町","金沢大学","②いちば館前","Aのりば",390,0],["09:53","10:20","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["10:28","10:55","94","旭町","金沢大学","②いちば館前","Aのりば",390,1],["10:53","11:20","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["11:18","11:43","97","鈴見町","金沢大学","②いちば館前","Aのりば",390,0],["11:28","11:55","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["11:53","12:20","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["12:18","12:45","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["13:13","13:40","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["13:28","13:52","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["13:53","14:17","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,1],["13:58","14:25","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["14:33","15:00","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["14:58","15:22","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["15:23","15:50","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["15:33","15:57","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["15:58","16:22","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["16:13","16:40","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["16:43","17:07","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["17:33","17:58","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["17:58","18:23","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["18:33","18:58","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["18:53","19:20","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["19:27","19:52","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["19:42","20:05","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0]],[["07:31","07:58","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["07:56","08:20","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["08:36","09:03","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["09:18","09:42","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["09:48","10:15","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["10:38","11:02","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["10:58","11:22","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["11:48","12:12","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["12:58","13:22","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["13:48","14:12","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["14:38","15:02","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["15:28","15:52","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["16:18","16:45","94","旭町","金沢大学","②いちば館前","Aのりば",390,0],["16:58","17:22","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["17:53","18:17","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["18:58","19:22","93","鈴見台二丁目","金沢大学","②いちば館前","Aのりば",390,0],["19:51","20:16","94","旭町","金沢大学","②いちば館前","Aのりば",390,0]],1],"金沢大学自然研前>香林坊":[[["10:14","10:35","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["10:28","10:49","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["10:44","11:05","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["10:46","11:05","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["11:04","11:25","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["11:34","11:55","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["11:44","12:05","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["12:19","12:40","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["12:24","12:45","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["12:42","13:03","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["13:04","13:25","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["13:14","13:35","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["13:34","13:55","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["13:49","14:17","96","旭町","香林坊","Aのりば","4番のりば （アトリオ前）",390,0],["14:01","14:22","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["14:17","14:36","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["14:47","15:08","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,1],["14:52","15:13","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["14:57","15:16","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,1],["15:04","15:25","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["15:24","15:45","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["15:47","16:07","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["15:52","16:15","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["16:23","16:43","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["16:34","16:59","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["16:39","16:59","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["16:47","17:11","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["17:04","17:28","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["17:37","17:57","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["17:44","18:09","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["18:14","18:39","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["18:19","18:42","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["18:24","18:43","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["18:29","18:52","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["18:43","19:02","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["18:59","19:27","96","旭町","香林坊","Aのりば","4番のりば （アトリオ前）",390,0],["19:24","19:45","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["19:34","19:55","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["19:44","20:05","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["20:18","20:38","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["20:29","20:47","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["20:38","20:58","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["20:52","21:12","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["21:33","21:53","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0]],[["10:34","10:55","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["10:44","11:03","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["11:29","11:48","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["11:59","12:20","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["12:43","13:02","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["12:44","13:05","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["13:54","14:13","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["14:34","14:55","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["14:44","15:03","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["15:29","15:48","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["16:16","16:35","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["16:34","16:56","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["17:14","17:35","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["17:34","17:55","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["17:49","18:08","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["18:46","19:04","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["18:56","19:16","94","旭町","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["19:03","19:23","53","旭町","西金沢","Aのりば","4番のりば （アトリオ前）",390,0],["19:43","20:01","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0],["20:43","21:01","93","鈴見台二丁目","金沢駅","Aのりば","7番のりば （旧日銀前）",390,0]],1],"香林坊>金沢大学自然研前":[[["07:15","07:36","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["07:43","08:06","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["07:44","1番のりば （四高記念館前）"]]],["07:46","08:02","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["07:47","1番のりば （四高記念館前）"]]],["07:53","08:16","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,1,[["07:54","1番のりば （四高記念館前）"]]],["07:54","08:10","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["07:55","1番のりば （四高記念館前）"]]],["08:07","08:29","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["08:18","08:38","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["08:19","1番のりば （四高記念館前）"]]],["08:27","08:49","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["08:37","09:00","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["08:38","1番のりば （四高記念館前）"]]],["08:47","09:09","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["08:52","09:15","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["08:53","1番のりば （四高記念館前）"]]],["09:08","09:30","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["09:17","09:37","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["09:18","1番のりば （四高記念館前）"]]],["09:30","09:52","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["09:32","09:53","97","鈴見町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["09:33","1番のりば （四高記念館前）"]]],["09:37","10:00","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["09:38","1番のりば （四高記念館前）"]]],["09:42","10:03","97","鈴見町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["09:43","1番のりば （四高記念館前）"]]],["09:53","10:15","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["09:57","10:20","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["09:58","1番のりば （四高記念館前）"]]],["10:20","10:42","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["10:32","10:55","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,1,[["10:33","1番のりば （四高記念館前）"]]],["10:55","11:17","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["10:57","11:20","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["10:58","1番のりば （四高記念館前）"]]],["11:22","11:43","97","鈴見町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["11:23","1番のりば （四高記念館前）"]]],["11:25","11:47","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["11:32","11:55","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["11:33","1番のりば （四高記念館前）"]]],["11:50","12:12","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["11:57","12:20","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["11:58","1番のりば （四高記念館前）"]]],["12:15","12:37","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["12:22","12:45","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["12:23","1番のりば （四高記念館前）"]]],["13:05","13:27","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["13:17","13:40","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["13:18","1番のりば （四高記念館前）"]]],["13:32","13:52","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["13:33","1番のりば （四高記念館前）"]]],["13:53","14:15","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["13:57","14:17","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,1,[["13:58","1番のりば （四高記念館前）"]]],["14:02","14:25","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["14:03","1番のりば （四高記念館前）"]]],["14:37","15:00","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["14:38","1番のりば （四高記念館前）"]]],["14:43","15:05","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["15:02","15:22","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["15:03","1番のりば （四高記念館前）"]]],["15:27","15:50","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["15:28","1番のりば （四高記念館前）"]]],["15:37","15:57","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["15:38","1番のりば （四高記念館前）"]]],["15:58","16:20","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["16:02","16:22","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["16:03","1番のりば （四高記念館前）"]]],["16:17","16:40","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["16:18","1番のりば （四高記念館前）"]]],["16:47","17:07","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["16:48","1番のりば （四高記念館前）"]]],["16:58","17:20","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["17:38","17:58","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["17:39","1番のりば （四高記念館前）"]]],["17:50","18:12","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["18:03","18:23","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["18:04","1番のりば （四高記念館前）"]]],["18:20","18:42","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["18:38","18:58","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["18:39","1番のりば （四高記念館前）"]]],["18:58","19:20","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["18:59","1番のりば （四高記念館前）"]]],["19:03","19:24","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["19:30","19:52","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["19:31","1番のりば （四高記念館前）"]]],["19:43","20:04","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["19:45","20:05","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["19:46","1番のりば （四高記念館前）"]]],["20:38","20:59","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0]],[["07:35","07:58","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["07:36","1番のりば （四高記念館前）"]]],["07:43","08:05","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["08:00","08:20","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["08:01","1番のりば （四高記念館前）"]]],["08:40","09:03","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["08:41","1番のりば （四高記念館前）"]]],["09:22","09:42","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["09:23","1番のりば （四高記念館前）"]]],["09:43","10:05","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["09:52","10:15","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["09:53","1番のりば （四高記念館前）"]]],["10:42","11:02","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["10:43","1番のりば （四高記念館前）"]]],["11:02","11:22","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["11:03","1番のりば （四高記念館前）"]]],["11:38","12:00","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["11:52","12:12","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["11:53","1番のりば （四高記念館前）"]]],["13:02","13:22","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["13:03","1番のりば （四高記念館前）"]]],["13:52","14:12","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["13:53","1番のりば （四高記念館前）"]]],["13:53","14:15","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["14:42","15:02","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["14:43","1番のりば （四高記念館前）"]]],["15:32","15:52","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["15:33","1番のりば （四高記念館前）"]]],["15:43","16:05","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["16:22","16:45","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["16:23","1番のりば （四高記念館前）"]]],["17:02","17:22","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["17:03","1番のりば （四高記念館前）"]]],["17:57","18:17","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["17:58","1番のりば （四高記念館前）"]]],["18:03","18:25","96","旭町","金沢大学","1番のりば （四高記念館前）","Aのりば",390,0],["19:02","19:22","93","鈴見台二丁目","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["19:03","1番のりば （四高記念館前）"]]],["19:54","20:16","94","旭町","金沢大学","4番のりば （アトリオ前）","Aのりば",390,0,[["19:55","1番のりば （四高記念館前）"]]]],1],"金沢大学自然研前>兼六園下・金沢城":[[["10:14","10:31","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["10:28","10:45","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["10:44","11:01","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["10:46","11:01","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["11:04","11:21","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["11:34","11:51","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["11:44","12:01","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["12:19","12:36","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["12:24","12:41","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["12:42","12:59","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["13:04","13:21","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["13:14","13:31","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["13:34","13:51","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["13:49","14:06","96","旭町","香林坊","Aのりば","1番のりば （石川門向い）",390,0],["14:01","14:18","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["14:17","14:32","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["14:47","15:04","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,1],["14:52","15:09","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["14:57","15:12","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,1],["15:04","15:21","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["15:24","15:41","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["15:47","16:02","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["15:52","16:09","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["16:23","16:38","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["16:34","16:53","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["16:39","16:54","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["16:47","17:06","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["17:04","17:23","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["17:37","17:52","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["17:44","18:03","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["18:14","18:33","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["18:19","18:38","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["18:24","18:39","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["18:29","18:48","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["18:43","18:58","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["18:59","19:16","96","旭町","香林坊","Aのりば","1番のりば （石川門向い）",390,0],["19:24","19:41","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["19:34","19:51","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["19:44","20:01","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["20:18","20:34","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["20:29","20:43","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["20:38","20:54","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["20:52","21:08","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["21:33","21:49","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0]],[["10:34","10:51","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["10:44","10:59","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["11:29","11:44","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["11:59","12:16","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["12:43","12:58","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["12:44","13:01","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["13:54","14:09","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["14:34","14:51","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["14:44","14:59","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["15:29","15:44","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["16:16","16:31","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["16:34","16:51","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["17:14","17:31","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["17:34","17:51","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["17:49","18:04","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["18:46","19:00","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["18:56","19:12","94","旭町","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["19:03","19:19","53","旭町","西金沢","Aのりば","1番のりば （石川門向い）",390,0],["19:43","19:57","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0],["20:43","20:57","93","鈴見台二丁目","金沢駅","Aのりば","1番のりば （石川門向い）",390,0]],1],"兼六園下・金沢城>金沢大学自然研前":[[["07:20","07:36","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["07:50","08:06","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["07:53","08:09","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["08:00","08:16","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,1],["08:13","08:29","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["08:25","08:38","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["08:33","08:49","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["08:44","09:00","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["08:53","09:09","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["08:59","09:15","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["09:14","09:30","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["09:24","09:37","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["09:36","09:52","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["09:39","09:53","97","鈴見町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["09:44","10:00","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["09:49","10:03","97","鈴見町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["09:59","10:15","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["10:04","10:20","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["10:26","10:42","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["10:39","10:55","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,1],["11:01","11:17","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["11:04","11:20","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["11:29","11:43","97","鈴見町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["11:31","11:47","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["11:39","11:55","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["11:56","12:12","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["12:04","12:20","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["12:21","12:37","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["12:29","12:45","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["13:11","13:27","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["13:24","13:40","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["13:39","13:52","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["13:59","14:15","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["14:04","14:17","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,1],["14:09","14:25","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["14:44","15:00","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["14:49","15:05","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["15:09","15:22","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["15:34","15:50","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["15:44","15:57","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["16:04","16:20","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["16:09","16:22","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["16:24","16:40","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["16:54","17:07","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["17:04","17:20","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["17:45","17:58","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["17:56","18:12","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["18:10","18:23","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["18:26","18:42","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["18:45","18:58","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["19:05","19:20","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["19:09","19:24","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["19:37","19:52","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["19:49","20:04","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["19:52","20:05","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["20:44","20:59","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0]],[["07:42","07:58","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["07:49","08:05","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["08:07","08:20","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["08:47","09:03","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["09:29","09:42","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["09:49","10:05","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["09:59","10:15","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["10:49","11:02","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["11:09","11:22","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["11:44","12:00","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["11:59","12:12","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["13:09","13:22","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["13:59","14:12","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["13:59","14:15","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["14:49","15:02","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["15:39","15:52","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["15:49","16:05","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["16:29","16:45","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["17:09","17:22","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["18:04","18:17","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["18:09","18:25","96","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["19:09","19:22","93","鈴見台二丁目","金沢大学","4番のりば （小将町方向）","Aのりば",390,0],["20:01","20:16","94","旭町","金沢大学","4番のりば （小将町方向）","Aのりば",390,0]],1],"金沢大学自然研前>東金沢駅":[[["12:14","12:39","99","鈴見町","東金沢駅","Aのりば","Bのりば",390,0],["16:26","16:52","99","鈴見町","東金沢駅","Aのりば","Bのりば",390,0]],[],1],"東金沢駅>金沢大学自然研前":[[["07:50","08:08","99","金沢星稜大学・高校","金沢大学","Bのりば","Aのりば",390,0],["09:40","09:58","99","金沢星稜大学・高校","金沢大学","Bのりば","Aのりば",390,0]],[],1],"金沢大学自然研前>西金沢":[[["10:14","10:56","53","旭町","西金沢","Aのりば","Dのりば",390,0],["10:44","11:26","53","旭町","西金沢","Aのりば","Dのりば",390,0],["11:04","11:46","53","旭町","西金沢","Aのりば","Dのりば",390,0],["11:34","12:16","53","旭町","西金沢","Aのりば","Dのりば",390,0],["12:24","13:06","53","旭町","西金沢","Aのりば","Dのりば",390,0],["13:34","14:19","53","旭町","西金沢","Aのりば","Dのりば",390,0],["14:52","15:37","53","旭町","西金沢","Aのりば","Dのりば",390,0],["15:24","16:09","53","旭町","西金沢","Aのりば","Dのりば",390,0],["15:52","16:37","53","旭町","西金沢","Aのりば","Dのりば",390,0],["16:34","17:22","53","旭町","西金沢","Aのりば","Dのりば",390,0],["17:44","18:34","53","旭町","西金沢","Aのりば","Dのりば",390,0],["18:14","19:03","53","旭町","西金沢","Aのりば","Dのりば",390,0],["19:24","20:06","53","旭町","西金沢","Aのりば","Dのりば",390,0]],[["10:34","11:16","53","旭町","西金沢","Aのりば","Dのりば",390,0],["12:44","13:26","53","旭町","西金沢","Aのりば","Dのりば",390,0],["14:34","15:19","53","旭町","西金沢","Aのりば","Dのりば",390,0],["16:34","17:20","53","旭町","西金沢","Aのりば","Dのりば",390,0],["19:03","19:44","53","旭町","西金沢","Aのりば","Dのりば",390,0]],1],"西金沢>金沢大学自然研前":[[["07:02","07:36","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["07:30","08:09","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["07:50","08:29","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["08:10","08:49","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["08:32","09:09","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["08:55","09:30","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["09:17","09:52","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["09:40","10:15","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["10:07","10:42","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["10:42","11:17","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["11:12","11:47","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["11:37","12:12","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["12:02","12:37","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["12:52","13:27","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["13:40","14:15","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["14:30","15:05","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["15:45","16:20","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["16:45","17:20","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["17:35","18:12","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["18:05","18:42","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["18:50","19:24","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["19:30","20:04","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["20:25","20:59","96","旭町","金沢大学","Cのりば","Aのりば",390,0]],[["07:30","08:05","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["09:30","10:05","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["11:25","12:00","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["13:40","14:15","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["15:30","16:05","96","旭町","金沢大学","Cのりば","Aのりば",390,0],["17:50","18:25","96","旭町","金沢大学","Cのりば","Aのりば",390,0]],1]}};
+const toHira = s => String(s || '').replace(/[\u30a1-\u30f6]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+const normQ = s => toHira(zen2han(String(s || ''))).replace(/[\s・･]/g, '').toLowerCase();
+const Hokutetsu = {
+  id: 'hokutetsu', label: '北鉄バス（アプリ内の時刻表）', base: '',
+  ready() { return !!(HOKUTETSU && HOKUTETSU.pairs); },
+  pair(a, b) { return this.ready() ? HOKUTETSU.pairs[a + '>' + b] : null; },
+  /* other：もう一方の入力欄で選んだ停留所、role：この入力欄が出発（from）か到着（to）か */
+  searchLocal(text, { other, role } = {}) {
+    if (!this.ready()) return [];
+    const q = normQ(text);
+    if (!q) return [];
+    let list = HOKUTETSU.stops.filter(st => [st.name, st.yomi, ...(st.alias || [])].some(w => normQ(w).includes(q) || (q.length >= 2 && q.includes(normQ(w)))));
+    if (other && other.provider === 'hokutetsu') list = list.filter(st => role === 'from' ? this.pair(st.name, other.name) : this.pair(other.name, st.name));
+    return list.map(st => ({ id: 'hk:' + st.name, name: st.name, sub: '北鉄バス・アプリ内の時刻表', kinds: ['バス'], provider: 'hokutetsu' }));
+  },
+  async searchStops(text, opts) { return this.searchLocal(text, opts); },
+  async plan(route, { at, arriveBy, count }) {
+    const p = this.pair(route.from.name, route.to.name);
+    if (!p) throw new AppError('plan', 'この区間の時刻はアプリに入っていません。入っているのは、金沢大学自然研前と、金沢駅・武蔵ヶ辻・近江町市場・香林坊・兼六園下・金沢城・東金沢駅・西金沢の間の直通便です。');
+    const base = jstYMD(at);
+    const trips = [];
+    for (let k = 0; k < 8; k++) {
+      const day = addDaysYMD(base, arriveBy ? -k : k);
+      let rows = p[dayType(day)];
+      if (typeof rows === 'number') rows = p[rows];
+      for (const row of rows || []) {
+        const t = this.makeTrip(route, row, day);
+        if (t) trips.push(t);
+      }
+      if (pickTrips(dedupeTrips(trips), at, arriveBy, count).length >= count) break;
+    }
+    return { trips: dedupeTrips(trips) };
+  },
+  makeTrip(route, row, day) {
+    const [d, a, r, via, dest, fp, tp, fare, ni, alt] = row;
+    const note = HOKUTETSU.notes[ni] || '';
+    if (state.settings.campusBreak && /学期休み期間、運休/.test(note)) return null;
+    const dep = jstAt(day, d);
+    let arv = jstAt(day, a);
+    if (arv < dep) arv = new Date(arv.getTime() + 86400000);
+    const line = HOKUTETSU.lines[r] || '';
+    const leg = {
+      kind: 'transit', mode: 'バス', name: line ? `${r} ${line}` : r, nameSub: via ? `${via} 経由` : '',
+      headsign: dest ? headsignText(dest) : '', agency: '北陸鉄道（北鉄バス）', agencyUrl: 'https://www.hokutetsu.co.jp/route-bus',
+      color: HOKUTETSU.colors[r] || '',
+      from: { name: route.from.name, time: dep, sched: dep, track: fp || '' },
+      to: { name: route.to.name, time: arv, sched: arv, track: tp || '' },
+      realtime: false, delayMin: 0, cancelled: false, stops: null,
+      alt: (alt || []).map(([t, pl]) => `${pl}からは ${t} 発`).join('／')
+    };
+    const flags = [];
+    if (fare) flags.push({ text: `${fare}円` });
+    if (note) flags.push({ text: note.replace('、', 'は'), warn: true });
+    return makeTrip({ legs: [leg], start: dep, end: arv, transfers: 0, flags });
+  }
+};
+
+const PROVIDERS = { transitous: Transitous, ekispert: Ekispert, demo: Demo, hokutetsu: Hokutetsu };
+const providerOf = id => PROVIDERS[id] || Transitous;
+
+/* =====================================================================
+   時刻の指定（今すぐ／出発時刻／到着時刻）
+   ===================================================================== */
+const timeSel = { mode: 'now', at: null };
+const qKey = () => timeSel.mode === 'now' ? 'now' : `${timeSel.mode}|${timeSel.at.getTime()}`;
+const queryAt = () => timeSel.mode === 'now' ? new Date() : new Date(timeSel.at);
+function visibleTrips(res, now) {
+  if (!res || res.qkey !== qKey()) return [];
+  const n = state.settings.perRoute;
+  if (timeSel.mode === 'arr') return pickTrips(res.trips, timeSel.at, true, n);
+  return pickTrips(res.trips, timeSel.mode === 'dep' ? timeSel.at : now, false, n);
+}
+function timeSelText() {
+  if (timeSel.mode === 'now') return '';
+  const v = jstYMD(timeSel.at);
+  return `${v.m}月${v.d}日（${DOW_JA[dowOf(v)]}）${hm(timeSel.at)} ${timeSel.mode === 'dep' ? '以降に出発' : 'までに到着'}`;
+}
+
+/* =====================================================================
+   結果の管理と取得の順番待ち
+   ===================================================================== */
+const results = new Map();   // routeId -> { status, trips, fetchedAt, error, note, ctrl }
+const openKeys = new Set();  // 開いている「経路の詳細」
+const queue = [];
+let active = 0;
+const MAX_PARALLEL = 2;
+
+function getRes(id) {
+  let r = results.get(id);
+  if (!r) { r = { status: 'idle', trips: [], fetchedAt: 0, error: null, note: '', ctrl: null }; results.set(id, r); }
+  return r;
+}
+function requestFetch(id, { force = false } = {}) {
+  const res = getRes(id);
+  if (res.ctrl || queue.includes(id)) return;
+  if (!force && res.lastTry && Date.now() - res.lastTry < 30000) return; // 30秒以内の再取得はしない
+  queue.push(id);
+  res.queued = true;
+  renderCard(id);
+  pump();
+}
+function pump() {
+  while (active < MAX_PARALLEL && queue.length) {
+    const id = queue.shift();
+    const route = state.routes.find(r => r.id === id);
+    if (!route) continue;
+    active++;
+    doFetch(route).finally(() => { active--; pump(); });
+  }
+}
+async function doFetch(route) {
+  const res = getRes(route.id);
+  res.queued = false;
+  res.status = 'loading';
+  res.ctrl = new AbortController();
+  res.lastTry = Date.now();
+  renderCard(route.id); updateRefreshAll();
+  const key = qKey();
+  try {
+    const prov = providerOf(route.provider);
+    const out = await prov.plan(route, { now: new Date(), at: queryAt(), arriveBy: timeSel.mode === 'arr', count: state.settings.perRoute, signal: res.ctrl.signal });
+    if (!results.has(route.id) || key !== qKey()) return;
+    res.qkey = key;
+    res.trips = out.trips || [];
+    res.note = out.note || '';
+    res.status = 'ok';
+    res.error = null;
+    res.fetchedAt = Date.now();
+    res.aheadAtFetch = futureTrips(res.trips, new Date()).length;
+    res.retryable = true;
+    res.fromCache = false;
+    if (key === 'now') saveCache();
+  } catch (e) {
+    if (e && e.name === 'AbortError') { res.status = res.trips.length ? 'ok' : 'idle'; }
+    else if (key === qKey()) {
+      res.qkey = key;
+      res.status = 'error'; res.error = errText(e); res.errorAt = Date.now();
+      const k = e && e.kind, st = e && e.status;
+      res.retryable = !(k === 'config' || k === 'auth' || k === 'plan' || k === 'format' || (k === 'http' && st >= 400 && st < 500 && st !== 429));
+    }
+  } finally {
+    res.ctrl = null;
+    renderCard(route.id); updateRefreshAll();
+    if (results.has(route.id) && res.qkey !== qKey() && state.routes.some(r => r.id === route.id)) setTimeout(() => requestFetch(route.id, { force: true }), 0);
+  }
+}
+function needsFetch(route, now) {
+  const res = results.get(route.id);
+  if (res && (res.ctrl || res.queued)) return false;
+  if (!res || res.qkey !== qKey()) return true;
+  if (!res.fetchedAt && res.status !== 'error') return true;
+  const since = now - (res.lastTry || res.fetchedAt || 0);
+  if (res.status === 'error') return res.retryable !== false && since > 3 * 60000;
+  if (timeSel.mode !== 'now') return false; // 指定した時刻の結果は自動で取り直さない
+  const ahead = futureTrips(res.trips, new Date(now)).length;
+  const atFetch = res.aheadAtFetch != null ? res.aheadAtFetch : ahead + 1;
+  // 便が出発して表示件数を下回ったら補充（ただし1分以上あける）
+  if (ahead < state.settings.perRoute && ahead < atFetch && since > 60000) return true;
+  // それ以外は10分ごと（遅れ情報などの更新）
+  return now - res.fetchedAt > 10 * 60000;
+}
+function refreshDue(force = false) {
+  if (document.visibilityState === 'hidden' || navigator.onLine === false) return;
+  const now = Date.now();
+  for (const r of state.routes) if (force || needsFetch(r, now)) requestFetch(r.id, { force });
+}
+
+/* =====================================================================
+   画面：区間カード
+   ===================================================================== */
+const board = $('#board');
+function renderBoard() {
+  board.textContent = '';
+  if (!state.routes.length) {
+    board.append(h('div', { class: 'board-empty' },
+      h('div', { style: 'font-weight:600;color:#1A1A1A;margin-bottom:4px', text: 'まだ区間が登録されていません' }),
+      h('div', { text: '上の「区間を追加」で出発地と到着地を選び、お気に入りに登録してください。' })));
+    return;
+  }
+  for (const r of state.routes) {
+    const card = h('article', { class: 'card', id: 'card-' + r.id, 'aria-labelledby': 'title-' + r.id });
+    board.append(card);
+    renderCard(r.id);
+  }
+}
+function renderCard(id) {
+  const card = document.getElementById('card-' + id);
+  const route = state.routes.find(r => r.id === id);
+  if (!card || !route) return;
+  const res = getRes(id);
+  const now = new Date();
+  const prov = providerOf(route.provider);
+  const busy = !!res.ctrl || !!res.queued;
+
+  const refreshBtn = h('button', { class: 'icon-btn small' + (busy ? ' is-busy' : ''), type: 'button', 'aria-label': `${route.from.name}から${route.to.name}を更新`, title: '更新', onclick: () => requestFetch(id, { force: true }) }, svg(ICON.refresh));
+  const meta = h('div', { class: 'card-meta' },
+    h('span', { class: 'tag', text: prov.label }),
+    route.provider === 'hokutetsu' && HOKUTETSU ? h('span', { text: HOKUTETSU.revLabel }) : null,
+    res.fetchedAt ? h('span', { text: hm(new Date(res.fetchedAt)) + ' 取得' }) : null,
+    busy ? h('span', { text: '更新中…' }) : null);
+  const head = h('header', { class: 'card-head' },
+    h('div', null,
+      route.label ? h('div', { class: 'card-label', text: route.label }) : null,
+      h('h2', { class: 'route-title', id: 'title-' + id, style: 'margin:0' },
+        h('span', { text: route.from.name }), h('span', { class: 'arrow', 'aria-label': 'から', text: '→' }), h('span', { text: route.to.name })),
+      meta),
+    refreshBtn);
+
+  const body = h('div', { class: 'card-body' });
+  const upcoming = visibleTrips(res, now);
+  const stale = res.qkey !== qKey();
+
+  if (res.status === 'error' && !stale && !upcoming.length) {
+    body.append(stateBox('error', '時刻を取得できませんでした', res.error, () => requestFetch(id, { force: true })));
+  } else if (!upcoming.length && (busy || stale || res.status === 'idle')) {
+    body.append(h('div', { class: 'state', role: 'status' }, h('span', { class: 'spinner', 'aria-hidden': 'true' }), h('div', { class: 'state-text', text: '読み込み中…' })));
+  } else if (!upcoming.length) {
+    const title = timeSel.mode === 'arr' ? '指定した時刻までに着く便が見つかりませんでした' : timeSel.mode === 'dep' ? '指定した時刻より後の便が見つかりませんでした' : 'この後の便が見つかりませんでした';
+    const why = route.provider === 'hokutetsu' ? 'この日はこの区間を走る便がないか、運行時間外です。時刻や日付を変えてお試しください。'
+      : '運行が終わったか、この区間が利用中のデータの対象外の可能性があります。駅・バス停を別の候補で登録し直すと見つかる場合があります。';
+    body.append(stateBox('empty', title, why, () => requestFetch(id, { force: true })));
+  } else {
+    if (res.status === 'error') body.append(h('div', { class: 'stale', text: `更新できませんでした。${hm(new Date(res.fetchedAt))} 時点の情報を表示しています。` }));
+    if (route.provider === 'demo') body.append(h('div', { class: 'stale', style: 'color:#6B7075', text: '架空のデータです（デモ）' }));
+    if (timeSel.mode !== 'now') body.append(h('div', { class: 'mode-note', text: timeSelText() + 'の便' }));
+    const list = h('ol', { class: 'trips' });
+    const best = timeSel.mode === 'arr' ? upcoming.length - 1 : 0;
+    upcoming.forEach((t, i) => list.append(tripItem(id, t, i === best, now)));
+    body.append(list);
+  }
+  card.dataset.sig = cardSig(res, now, busy);
+  card.replaceChildren(head, body);
+}
+function cardSig(res, now, busy) {
+  return visibleTrips(res, now).map(t => t.key).join(',') + '|' + res.status + '|' + busy + '|' + res.qkey + '|' + qKey();
+}
+function stateBox(kind, title, text, retry) {
+  return h('div', { class: 'state' + (kind === 'error' ? ' error' : ''), role: kind === 'error' ? 'alert' : 'status' },
+    kind === 'error' ? svg(ICON.warn) : null,
+    h('div', { class: 'state-text' },
+      h('div', { class: 'state-title', text: title }),
+      text ? h('div', { style: 'font-size:14px;color:#4A4F55;margin-top:2px', text }) : null,
+      retry ? h('button', { class: 'btn', type: 'button', onclick: retry, text: '再読み込み' }) : null));
+}
+/* 番線・のりばの表示（電車で情報がないときもそう書く） */
+function depTrackText(l) {
+  if (!l) return '';
+  if (l.from.track) return l.from.track + ' 発';
+  return isTrainMode(l.mode) ? '番線データなし' : '';
+}
+function tripItem(routeId, t, isBest, now) {
+  const transit = t.legs.filter(l => l.kind === 'transit');
+  const soon = (t.dep - now) < 3 * 60000;
+  const day = dayLabel(t.dep, now);
+  const subParts = [durText(t.durationMin), t.transfers > 0 ? `乗換${t.transfers}回` : '乗換なし'];
+  const first = transit[0];
+  const firstTrack = depTrackText(first);
+  // 時刻を指定しているときは、今日のこれからの便だけ残り時間を出す
+  const showUntil = timeSel.mode === 'now' || (t.dep > now && dayKey(t.dep) === dayKey(now));
+
+  const lines = h('div', { class: 'trip-lines' });
+  transit.forEach((l, k) => {
+    if (k) lines.append(h('span', { class: 'to-mark', 'aria-label': '乗り換えて', text: '›' }));
+    // 「10」のような短い系統名は種別を添える（例：バス 10）
+    const nm = /^[0-9A-Za-z\-]{1,4}$/.test(zen2han(l.name)) ? `${l.mode} ${l.name}` : l.name;
+    lines.append(h('span', { text: nm }));
+    if (k === 0 && l.headsign) lines.append(h('span', { style: 'color:#4A4F55;font-size:14px', text: '（' + l.headsign + '）' }));
+    // 乗り換えた先の電車も、何番線から出るかを書く
+    if (k > 0 && isTrainMode(l.mode)) lines.append(h('span', { class: 'track' + (l.from.track ? '' : ' none'), style: 'margin-left:4px', text: depTrackText(l) }));
+  });
+
+  const detKey = routeId + '|' + t.key;
+  const details = h('details', { class: 'trip-detail' },
+    h('summary', null, h('span', { text: '経路の詳細' }), svg(ICON.chev)),
+    legList(t));
+  if (openKeys.has(detKey)) details.open = true;
+  details.addEventListener('toggle', () => { details.open ? openKeys.add(detKey) : openKeys.delete(detKey); });
+
+  return h('li', { class: 'trip' + (isBest ? ' first' : '') },
+    h('div', { class: 'trip-main' },
+      h('div', { class: 'dep-wrap' },
+        day ? h('span', { class: 'day', text: day }) : null,
+        h('span', { class: 'dep-time', text: hm(t.dep) }),
+        h('span', { class: 'arr-time', text: '→ ' + hm(t.arr) + ' 着' })),
+      showUntil ? h('span', { class: 'until' + (soon ? ' soon' : ''), dataset: { dep: String(t.dep.getTime()) }, text: untilText(t.dep, now) }) : null),
+    h('div', { class: 'trip-sub' }, subParts.filter(Boolean).map((s, k) => [k ? h('span', { class: 'sep', 'aria-hidden': 'true', text: '·' }) : null, s]),
+      firstTrack ? [h('span', { class: 'sep', 'aria-hidden': 'true', text: '·' }), h('span', { class: first.from.track ? 'dep-track' : 'dep-track none', text: firstTrack })] : null),
+    lines,
+    t.flags && t.flags.length ? h('div', { class: 'trip-flags' }, t.flags.map(f => h('span', { class: 'flag' + (f.warn ? ' warn' : ''), text: f.text }))) : null,
+    details);
+}
+function legList(t) {
+  const ol = h('ol', { class: 'legs' });
+  const legs = t.legs;
+  legs.forEach((l, i) => {
+    if (l.kind === 'walk') {
+      const isTransfer = i > 0 && i < legs.length - 1;
+      const where = (l.to && l.to.name && l.from && l.to.name !== l.from.name) ? `（${l.to.name}へ）` : '';
+      ol.append(h('li', { class: 'leg-walk', text: `${l.mode} ${durText(l.minutes) || ''}${isTransfer ? '・乗換' : ''}${where}` }));
+      return;
+    }
+    const delay = l.delayMin > 0 ? h('span', { class: 'delay', text: `定刻 ${hm(l.from.sched)}（${l.delayMin}分遅れ）` }) : null;
+    ol.append(h('li', { class: 'leg', style: l.color ? `border-left-color:${l.color}` : null },
+      h('div', { class: 'leg-head' }, h('span', { class: 'mode', text: l.mode }), l.name,
+        l.nameSub ? h('span', { class: 'leg-namesub', text: ' ' + l.nameSub }) : null,
+        l.cancelled ? h('span', { class: 'flag warn', style: 'margin-left:6px', text: '運休' }) : null),
+      l.headsign ? h('div', { class: 'leg-hs', text: l.headsign }) : null,
+      h('div', { class: 'leg-stop' }, h('span', { class: 'lt', text: hm(l.from.time) + ' 発' }), h('span', { class: 'st', text: l.from.name }),
+        l.from.track ? h('span', { class: 'track', text: l.from.track + ' 発' }) : (isTrainMode(l.mode) ? h('span', { class: 'track none', text: '番線データなし（駅の案内で確認）' }) : null), delay),
+      l.alt ? h('div', { class: 'leg-namesub', style: 'margin:2px 0 0 3.6em', text: l.alt }) : null,
+      h('div', { class: 'leg-stop' }, h('span', { class: 'lt', text: hm(l.to.time) + ' 着' }), h('span', { class: 'st', text: l.to.name }), l.to.track ? h('span', { class: 'track', text: l.to.track + ' 着' }) : null,
+        l.stops != null && l.stops >= 0 ? h('span', { class: 'leg-namesub', text: `途中${l.stops}駅・停留所` }) : null),
+      (l.agency || l.agencyUrl) ? h('div', { class: 'leg-agency' }, l.agency || '',
+        l.agencyUrl ? [' ', h('a', { href: l.agencyUrl, target: '_blank', rel: 'noopener noreferrer', text: '事業者の公式サイト' })] : null) : null));
+  });
+  return ol;
+}
+
+/* 15秒ごと：残り時間の更新・出発済みの便を消す・必要なら再取得 */
+function tick() {
+  const now = new Date();
+  for (const r of state.routes) {
+    const card = document.getElementById('card-' + r.id);
+    if (!card) continue;
+    const res = getRes(r.id);
+    const busy = !!res.ctrl || !!res.queued;
+    const sig = cardSig(res, now, busy);
+    if (sig !== card.dataset.sig) { renderCard(r.id); continue; }
+    card.querySelectorAll('.until[data-dep]').forEach(el => {
+      const dep = new Date(+el.dataset.dep);
+      el.textContent = untilText(dep, now);
+      el.classList.toggle('soon', (dep - now) < 3 * 60000);
+    });
+  }
+  refreshDue(false);
+}
+
+/* =====================================================================
+   画面：区間追加（検索候補つき入力）
+   ===================================================================== */
+function makeStopInput(fieldEl, { role, getOther, onChange }) {
+  const input = $('input', fieldEl), list = $('ul', fieldEl);
+  let selected = null, items = [], activeIdx = -1, timer = null, ctrl = null, seq = 0;
+  const listId = list.id;
+
+  function setSelected(v) {
+    selected = v;
+    fieldEl.classList.toggle('is-selected', !!v);
+    onChange();
+  }
+  function close() {
+    list.hidden = true; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); activeIdx = -1;
+  }
+  function openWith(nodes) {
+    list.replaceChildren(...nodes); list.hidden = false; input.setAttribute('aria-expanded', 'true');
+  }
+  function showMsg(text, isErr) { openWith([h('li', { class: 'ac-msg' + (isErr ? ' error' : ''), role: 'presentation', text })]); }
+  function renderItems(extra) {
+    if (!items.length) { showMsg('候補が見つかりませんでした。別の書き方（例：「駅」を付けない）でお試しください。'); return; }
+    const mixed = new Set(items.map(it => it.provider)).size > 1;
+    const nodes = items.map((it, i) => h('li', {
+      id: `${listId}-o${i}`, role: 'option', 'aria-selected': i === activeIdx ? 'true' : 'false',
+      onpointerdown: e => e.preventDefault(),
+      onclick: () => choose(i)
+    },
+      h('div', { class: 'ac-name', text: it.name }),
+      (it.sub || (it.kinds && it.kinds.length)) ? h('div', { class: 'ac-sub' },
+        it.sub ? h('span', { text: it.sub }) : null,
+        (it.kinds || []).map(k => h('span', { class: 'chip', text: k })),
+        mixed && it.provider !== 'hokutetsu' ? h('span', { class: 'chip', text: providerOf(it.provider).label }) : null) : null));
+    if (extra) nodes.push(h('li', { class: 'ac-msg error', role: 'presentation', text: extra }));
+    openWith(nodes);
+  }
+  function highlight(i) {
+    activeIdx = i;
+    [...list.querySelectorAll('[role=option]')].forEach((li, k) => li.setAttribute('aria-selected', k === i ? 'true' : 'false'));
+    const el = document.getElementById(`${listId}-o${i}`);
+    if (el) { input.setAttribute('aria-activedescendant', el.id); el.scrollIntoView({ block: 'nearest' }); }
+  }
+  function choose(i) {
+    const it = items[i];
+    if (!it) return;
+    input.value = it.name;
+    setSelected({ ...it, provider: it.provider || state.settings.provider });
+    close();
+  }
+  async function run() {
+    const q = input.value.trim();
+    if (!q) { close(); return; }
+    if (ctrl) ctrl.abort();
+    ctrl = new AbortController();
+    const my = ++seq;
+    const other = getOther();
+    // もう一方で北鉄バスを選んでいれば北鉄バスだけ、ほかのデータを選んでいればそのデータだけを探す
+    const local = (!other || other.provider === 'hokutetsu') ? Hokutetsu.searchLocal(q, { other, role }) : [];
+    const apiId = other ? (other.provider === 'hokutetsu' ? null : other.provider) : state.settings.provider;
+    if (local.length) { items = local; activeIdx = -1; renderItems(apiId ? '' : ''); if (apiId) list.append(h('li', { class: 'ac-msg', role: 'presentation', text: 'ほかの候補を検索中…' })); }
+    else showMsg('検索中…');
+    try {
+      let remote = [], remoteErr = null;
+      if (apiId) {
+        try { remote = (await providerOf(apiId).searchStops(q, { signal: ctrl.signal, near: other })).map(x => ({ ...x, provider: apiId })); }
+        catch (e) { if (e && e.name === 'AbortError') throw e; remoteErr = e; }
+      }
+      if (my !== seq) return;
+      items = [...local, ...remote].slice(0, 12); activeIdx = -1;
+      if (!items.length && remoteErr) throw remoteErr;
+      if (document.activeElement === input) renderItems(remoteErr ? errText(remoteErr) : '');
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      if (my !== seq) return;
+      items = [];
+      showMsg(errText(e), true);
+    }
+  }
+  input.addEventListener('input', () => {
+    if (selected) setSelected(null);
+    clearTimeout(timer);
+    timer = setTimeout(run, 300);
+  });
+  input.addEventListener('focus', () => { if (!selected && input.value.trim()) { clearTimeout(timer); timer = setTimeout(run, 50); } });
+  input.addEventListener('blur', () => setTimeout(close, 180));
+  input.addEventListener('keydown', e => {
+    const n = items.length;
+    if (e.key === 'ArrowDown' && n) { e.preventDefault(); if (list.hidden) renderItems(); highlight((activeIdx + 1) % n); }
+    else if (e.key === 'ArrowUp' && n) { e.preventDefault(); highlight((activeIdx - 1 + n) % n); }
+    else if (e.key === 'Enter') {
+      if (!list.hidden && n) { e.preventDefault(); choose(activeIdx >= 0 ? activeIdx : 0); }
+      else if (!selected) { e.preventDefault(); clearTimeout(timer); run(); }
+    }
+    else if (e.key === 'Escape') { close(); }
+  });
+  return {
+    get value() { return selected; },
+    set(v) { input.value = v ? v.name : ''; items = []; close(); setSelected(v || null); },
+    clear() { this.set(null); },
+    input
+  };
+}
+
+const fromBox = makeStopInput($('#fromField'), { role: 'from', getOther: () => toBox && toBox.value, onChange: updateAddBtn });
+const toBox = makeStopInput($('#toField'), { role: 'to', getOther: () => fromBox && fromBox.value, onChange: updateAddBtn });
+const addBtn = $('#addBtn'), addMsg = $('#addMsg');
+
+function updateAddBtn() {
+  if (!addBtn) return;
+  const a = fromBox && fromBox.value, b = toBox && toBox.value;
+  addBtn.disabled = !(a && b);
+  if (addMsg && a && b) setAddMsg('');
+}
+function setAddMsg(text, isErr) { addMsg.textContent = text; addMsg.classList.toggle('error', !!isErr); }
+function swapInputs() {
+  const a = fromBox.value, b = toBox.value;
+  const ta = fromBox.input.value, tb = toBox.input.value;
+  fromBox.set(b); toBox.set(a);
+  if (!b) fromBox.input.value = tb;
+  if (!a) toBox.input.value = ta;
+}
+$('#swapBtn').addEventListener('click', swapInputs);
+$('#swapBtn2').addEventListener('click', swapInputs);
+addBtn.addEventListener('click', () => {
+  const a = fromBox.value, b = toBox.value;
+  if (!a || !b) { setAddMsg('出発と到着を、それぞれ候補から選んでください。', true); return; }
+  if (a.provider !== b.provider) { setAddMsg('出発と到着は同じデータから選んでください（北鉄バスの停留所どうし、など）。', true); return; }
+  if (a.provider === 'hokutetsu' && !Hokutetsu.pair(a.name, b.name)) { setAddMsg('この2つの停留所の間の時刻はアプリに入っていません。', true); return; }
+  if (a.id === b.id) { setAddMsg('出発と到着が同じです。', true); return; }
+  const err = addRoute(a, b, $('#labelInput').value.trim());
+  if (err) { setAddMsg(err, true); return; }
+  fromBox.clear(); toBox.clear(); $('#labelInput').value = '';
+  setAddMsg(`「${a.name} → ${b.name}」を登録しました。`);
+});
+function addRoute(a, b, label) {
+  const provider = a.provider || state.settings.provider;
+  if (state.routes.some(r => r.provider === provider && r.from.id === a.id && r.to.id === b.id)) return 'この区間はすでに登録されています。';
+  const pick = s => ({ id: s.id, name: s.name, sub: s.sub || '', lat: s.lat, lon: s.lon });
+  const route = { id: uid(), provider, from: pick(a), to: pick(b), label: label || '' };
+  state.routes.push(route);
+  saveState();
+  renderAll();
+  requestFetch(route.id, { force: true });
+  return null;
+}
+function updateProviderHint() {
+  const p = providerOf(state.settings.provider);
+  let s = `検索に使うデータ：${p.label}`;
+  if (p.id === 'ekispert' && !p.ready()) s += '（アクセスキー未設定）';
+  if (Hokutetsu.ready()) s += '。金沢大学自然研前などの北鉄バスは、アプリ内の時刻表からも選べます';
+  $('#providerHint').textContent = s;
+  for (const box of [fromBox, toBox]) if (box.value && box.value.provider !== 'hokutetsu' && box.value.provider !== state.settings.provider) box.clear();
+}
+
+/* =====================================================================
+   画面：お気に入り一覧
+   ===================================================================== */
+function renderFavs() {
+  const ul = $('#favList');
+  ul.textContent = '';
+  $('#favCount').textContent = state.routes.length ? `（${state.routes.length}件）` : '';
+  if (!state.routes.length) { ul.append(h('li', { class: 'empty-note', text: '登録された区間はまだありません。' })); return; }
+  state.routes.forEach((r, i) => {
+    const name = `${r.from.name} → ${r.to.name}`;
+    const li = h('li', { class: 'fav' });
+    const normal = () => li.replaceChildren(
+      h('div', null,
+        h('div', { class: 'fav-name', text: name }),
+        h('div', { class: 'fav-sub', text: [r.label, providerOf(r.provider).label].filter(Boolean).join(' · ') })),
+      h('div', { class: 'fav-actions' },
+        h('button', { class: 'icon-btn small', type: 'button', 'aria-label': `${name} を上へ`, title: '上へ', disabled: i === 0, onclick: () => moveRoute(i, -1) }, svg(ICON.up)),
+        h('button', { class: 'icon-btn small', type: 'button', 'aria-label': `${name} を下へ`, title: '下へ', disabled: i === state.routes.length - 1, onclick: () => moveRoute(i, 1) }, svg(ICON.down)),
+        h('button', { class: 'icon-btn small', type: 'button', 'aria-label': `${name} の逆方向を追加`, title: '逆方向を追加', onclick: () => addReverse(r) }, svg(ICON.reverse)),
+        h('button', { class: 'icon-btn small', type: 'button', 'aria-label': `${name} を削除`, title: '削除', style: 'color:#B3261E', onclick: confirmDel }, svg(ICON.trash))));
+    const confirmDel = () => li.replaceChildren(
+      h('div', { class: 'fav-confirm' },
+        h('span', { text: `「${name}」を削除しますか？` }),
+        h('button', { class: 'btn btn-danger', type: 'button', style: 'min-height:40px;padding:6px 14px', onclick: () => removeRoute(r.id), text: '削除' }),
+        h('button', { class: 'btn', type: 'button', style: 'min-height:40px;padding:6px 14px', onclick: normal, text: 'やめる' })));
+    normal();
+    ul.append(li);
+  });
+}
+function moveRoute(i, d) {
+  const j = i + d;
+  if (j < 0 || j >= state.routes.length) return;
+  [state.routes[i], state.routes[j]] = [state.routes[j], state.routes[i]];
+  saveState(); renderAll();
+}
+function addReverse(r) {
+  const err = addRoute({ ...r.to, provider: r.provider }, { ...r.from, provider: r.provider }, r.label ? r.label + '（逆）' : '');
+  const panel = $('#favPanel');
+  const note = h('li', { class: 'empty-note', role: 'status', text: err || `「${r.to.name} → ${r.from.name}」を追加しました。` });
+  $('#favList').append(note);
+  panel.open = true;
+}
+function removeRoute(id) {
+  const res = results.get(id);
+  if (res && res.ctrl) res.ctrl.abort();
+  results.delete(id);
+  const qi = queue.indexOf(id); if (qi >= 0) queue.splice(qi, 1);
+  state.routes = state.routes.filter(r => r.id !== id);
+  saveState(); saveCache(); renderAll();
+}
+
+/* =====================================================================
+   画面：上部・バナー・フッター
+   ===================================================================== */
+let lastClock = '';
+function tickClock() {
+  const now = new Date();
+  const s = fmtHMS.format(now);
+  if (s === lastClock) return;
+  lastClock = s;
+  const [hh, mm, ss] = s.split(':');
+  $('#clock').replaceChildren(`${hh}:${mm}`, h('span', { class: 'sec', text: ':' + ss }));
+  $('#date').textContent = fmtDate.format(now);
+}
+function renderBanners() {
+  const box = $('#banners');
+  box.textContent = '';
+  if (!storageOK) box.append(h('div', { class: 'banner', role: 'status', text: 'この環境では登録内容を保存できません（プライベートブラウズなど）。ページを閉じると登録が消えます。' }));
+  if (navigator.onLine === false) box.append(h('div', { class: 'banner', role: 'status', text: 'オフラインです。表示しているのは最後に取得した時刻です。' }));
+  if (seedNotice) box.append(h('div', { class: 'banner', role: 'status' }, seedNotice, ' ',
+    h('button', { class: 'btn btn-small', type: 'button', onclick: () => { seedNotice = ''; renderBanners(); }, text: '閉じる' })));
+  if (seedOffer) box.append(h('div', { class: 'banner', role: 'status' }, `送られてきた区間が${seedOffer.routes.length}件あります。お気に入りに追加しますか？ `,
+    h('button', { class: 'btn btn-small btn-primary', type: 'button', onclick: () => {
+      state.routes.push(...seedOffer.routes.map(r => ({ ...r, id: uid() }))); saveState(); seedOffer.mark(); seedOffer = null; renderAll(); refreshDue(true);
+    }, text: '追加する' }), ' ',
+    h('button', { class: 'btn btn-small', type: 'button', onclick: () => { seedOffer.mark(); seedOffer = null; renderBanners(); }, text: '追加しない' })));
+  const needKey = state.routes.some(r => r.provider === 'ekispert') && !Ekispert.ready();
+  if (needKey) box.append(h('div', { class: 'banner', role: 'status', text: '駅すぱあと API で登録した区間があります。右上の設定でアクセスキーを入力してください。' }));
+}
+function renderFooter() {
+  const used = new Set(state.routes.map(r => r.provider));
+  used.add(state.settings.provider);
+  const f = $('#footer');
+  f.textContent = '';
+  f.append(h('p', { class: 'disclaimer' }, '表示内容の正確性は保証しません。遅延・運休・ダイヤ改正などで実際と異なる場合があります。ご乗車の前に、必ず各交通事業者の公式情報で確認してください。'));
+  const src = h('p', null, 'データ出典：');
+  const parts = [];
+  if (used.has('transitous')) parts.push([h('a', { href: 'https://transitous.org/', target: '_blank', rel: 'noopener noreferrer', text: 'Transitous' }), '（',
+    h('a', { href: 'https://transitous.org/sources/', target: '_blank', rel: 'noopener noreferrer', text: 'データ提供元の一覧' }), '）、地図データ © ',
+    h('a', { href: 'https://www.openstreetmap.org/copyright', target: '_blank', rel: 'noopener noreferrer', text: 'OpenStreetMap contributors' })]);
+  if (used.has('ekispert')) parts.push(['Powered by ', h('a', { href: 'https://api-info.ekispert.com/', target: '_blank', rel: 'noopener noreferrer', text: '駅すぱあと API' }), '（株式会社ヴァル研究所）']);
+  if (Hokutetsu.ready()) parts.push(['北鉄バスの時刻：', h('a', { href: HOKUTETSU.url, target: '_blank', rel: 'noopener noreferrer', text: '北陸鉄道 時刻・運賃検索' }), `（${HOKUTETSU.revLabel}）から収録`]);
+  if (used.has('demo')) parts.push('デモ表示は架空のデータです');
+  parts.forEach((p, i) => { if (i) src.append(' ／ '); src.append(...[p].flat()); });
+  f.append(src);
+  if (APP.repo) f.append(h('p', null, 'ソースコード・連絡先：', h('a', { href: APP.repo, target: '_blank', rel: 'noopener noreferrer', text: APP.repo.replace(/^https:\/\//, '') }), '（MIT License）'));
+  if (state.settings.contact) f.append(h('p', { text: '連絡先：' + state.settings.contact }));
+  f.append(h('p', { text: `作成日時：${APP.created}　位置情報は使いません。登録内容はこの端末のブラウザ内に保存されます。` }));
+}
+function updateRefreshAll() {
+  const busy = [...results.values()].some(r => r.ctrl);
+  $('#refreshAll').classList.toggle('is-busy', busy);
+}
+function renderAll() {
+  renderBanners();
+  renderFavs();
+  renderBoard();
+  renderFooter();
+  updateProviderHint();
+  updateRefreshAll();
+  if (!state.routes.length) $('#addPanel').open = true;
+}
+
+/* =====================================================================
+   設定ダイアログ
+   ===================================================================== */
+const dlg = $('#settings');
+function openSettings() {
+  const s = state.settings;
+  dlg.querySelectorAll('input[name=provider]').forEach(r => { r.checked = r.value === s.provider; });
+  $('#keyInput').value = s.ekispertKey || '';
+  $('#keyInput').type = 'password'; $('#toggleKey').textContent = '表示';
+  $('#countSel').value = String(s.perRoute);
+  $('#xferSel').value = String(s.maxTransfers ?? '');
+  $('#contactInput').value = s.contact || '';
+  $('#campusBreak').checked = !!s.campusBreak;
+  $('#hkInfo').textContent = Hokutetsu.ready()
+    ? `北陸鉄道の公式時刻表（${HOKUTETSU.revLabel}）から ${HOKUTETSU.fetched.replace(/-/g, '/')} に収録した、金沢大学自然研前と金沢駅・武蔵ヶ辻・近江町市場・香林坊・兼六園下・金沢城・東金沢駅・西金沢の間の直通便です。平日・土曜・日曜祝日で分けています。年末年始や臨時のダイヤは入っていません。`
+    : '';
+  resetWipe();
+  if (typeof dlg.showModal === 'function') dlg.showModal();
+  else { dlg.setAttribute('open', ''); dlg.classList.add('fallback-open'); }
+}
+function closeSettings() {
+  if (typeof dlg.close === 'function' && dlg.open) dlg.close();
+  dlg.removeAttribute('open'); dlg.classList.remove('fallback-open');
+}
+$('#openSettings').addEventListener('click', openSettings);
+$('#closeSettings').addEventListener('click', closeSettings);
+$('#cancelSettings').addEventListener('click', closeSettings);
+$('#toggleKey').addEventListener('click', () => {
+  const k = $('#keyInput'); const show = k.type === 'password';
+  k.type = show ? 'text' : 'password'; $('#toggleKey').textContent = show ? '隠す' : '表示';
+});
+$('#settingsForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const checked = dlg.querySelector('input[name=provider]:checked');
+  const before = JSON.stringify(state.settings);
+  state.settings = {
+    ...state.settings,
+    provider: checked ? checked.value : state.settings.provider,
+    ekispertKey: $('#keyInput').value.trim(),
+    perRoute: parseInt($('#countSel').value, 10) || 4,
+    maxTransfers: $('#xferSel').value,
+    contact: $('#contactInput').value.trim(),
+    campusBreak: $('#campusBreak').checked
+  };
+  const changedFetch = JSON.parse(before).ekispertKey !== state.settings.ekispertKey || JSON.parse(before).maxTransfers !== state.settings.maxTransfers || JSON.parse(before).perRoute !== state.settings.perRoute || JSON.parse(before).campusBreak !== state.settings.campusBreak;
+  saveState();
+  closeSettings();
+  renderAll();
+  if (changedFetch) refreshDue(true);
+});
+function resetWipe() {
+  $('#wipeArea').replaceChildren(h('button', { class: 'btn btn-danger', type: 'button', id: 'wipeBtn', onclick: askWipe, text: '登録内容をすべて消去' }));
+}
+function askWipe() {
+  $('#wipeArea').replaceChildren(h('div', { class: 'fav-confirm' },
+    h('span', { text: '登録した区間・設定・キーをすべて消去します。' }),
+    h('button', { class: 'btn btn-danger', type: 'button', onclick: doWipe, text: '消去する' }),
+    h('button', { class: 'btn', type: 'button', onclick: resetWipe, text: 'やめる' })));
+}
+function doWipe() {
+  for (const r of results.values()) if (r.ctrl) r.ctrl.abort();
+  results.clear(); queue.length = 0;
+  state.settings = { ...DEFAULT_SETTINGS }; state.routes = [];
+  try { localStorage.removeItem(LS_KEY); localStorage.removeItem(LS_CACHE); } catch { }
+  closeSettings(); fromBox.clear(); toBox.clear(); renderAll();
+}
+$('#wipeBtn').addEventListener('click', askWipe);
+dlg.addEventListener('click', e => { if (e.target === dlg) closeSettings(); }); // 背景をタップで閉じる
+
+/* =====================================================================
+   時刻の指定バー
+   ===================================================================== */
+const pad2 = n => String(n).padStart(2, '0');
+function syncTimeUI() {
+  document.querySelectorAll('#timebar .seg-btn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === timeSel.mode)));
+  $('#timeRow').hidden = timeSel.mode === 'now';
+  if (!timeSel.at) return;
+  const a = timeSel.at;
+  $('#dateInput').value = `${a.getFullYear()}-${pad2(a.getMonth() + 1)}-${pad2(a.getDate())}`;
+  $('#timeInput').value = `${pad2(a.getHours())}:${pad2(a.getMinutes())}`;
+  const v = jstYMD(a);
+  $('#dayTypeLabel').textContent = `${v.m}月${v.d}日（${DOW_JA[dowOf(v)]}）は${DAYTYPE_JA[dayType(v)]}${isHoliday(v) ? '（祝日）' : ''}のダイヤです。`;
+}
+let qTimer = null;
+function onQueryChange() {
+  clearTimeout(qTimer);
+  qTimer = setTimeout(() => {
+    for (const r of results.values()) { if (r.ctrl) r.ctrl.abort(); r.queued = false; }
+    queue.length = 0;
+    renderBoard();
+    refreshDue(true);
+  }, 250);
+}
+function setTimeMode(mode) {
+  if (mode !== 'now' && !timeSel.at) {
+    const d = new Date(); d.setSeconds(0, 0); d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5); timeSel.at = d;
+  }
+  if (mode === timeSel.mode) return;
+  timeSel.mode = mode;
+  syncTimeUI(); onQueryChange();
+}
+function readTimeInputs() {
+  const dv = $('#dateInput').value, tv = $('#timeInput').value;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dv) || !/^\d{1,2}:\d{2}/.test(tv)) return;
+  const [y, m, d] = dv.split('-').map(Number), [hh, mm] = tv.split(':').map(Number);
+  const at = new Date(y, m - 1, d, hh, mm);
+  if (isNaN(at)) return;
+  timeSel.at = at; syncTimeUI(); onQueryChange();
+}
+document.querySelectorAll('#timebar .seg-btn').forEach(b => b.addEventListener('click', () => setTimeMode(b.dataset.mode)));
+$('#dateInput').addEventListener('change', readTimeInputs);
+$('#timeInput').addEventListener('change', readTimeInputs);
+document.querySelectorAll('#timebar [data-shift]').forEach(b => b.addEventListener('click', () => {
+  timeSel.at = new Date(timeSel.at.getTime() + Number(b.dataset.shift) * 60000); syncTimeUI(); onQueryChange();
+}));
+
+/* =====================================================================
+   スマホへ送る・ブラウザで開く
+   ===================================================================== */
+const shareDlg = $('#share');
+const UA = navigator.userAgent || '';
+const isLineApp = /\bLine\//i.test(UA);
+const isInApp = isLineApp || /FBAN|FBAV|Instagram|MicroMessenger/i.test(UA);
+const isIOS = /iPhone|iPad|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isAndroid = /Android/i.test(UA);
+const isWebUrl = () => /^https?:$/.test(location.protocol) && !/^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(location.hostname);
+const pageUrl = () => location.href.split('#')[0].replace(/([?&])openExternalBrowser=1&?/, '$1').replace(/[?&]$/, '');
+const SHARE_NAME = '駅バス時刻.html';
+function openDialog(d) { if (typeof d.showModal === 'function') d.showModal(); else { d.setAttribute('open', ''); d.classList.add('fallback-open'); } }
+function closeDialog(d) { if (typeof d.close === 'function' && d.open) d.close(); d.removeAttribute('open'); d.classList.remove('fallback-open'); }
+
+/* 送るファイル：このアプリそのもの（必要なら登録した区間を入れる。キーは入れない） */
+function buildShareHtml(withRoutes) {
+  const seed = withRoutes && state.routes.length ? {
+    v: 1, routes: state.routes.map(r => ({ ...r })),
+    settings: { provider: state.settings.provider, perRoute: state.settings.perRoute, maxTransfers: state.settings.maxTransfers, campusBreak: state.settings.campusBreak }
+  } : null;
+  const json = seed ? JSON.stringify(seed).replace(/</g, '\\u003c') : '';
+  return SELF_HTML.replace(/<script id="seedData" type="application\/json">[\s\S]*?<\/script>/, () => `<script id="seedData" type="application/json">${json}<\/script>`);
+}
+function downloadFile(html, statusEl) {
+  try {
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+    const a = h('a', { href: url, download: SHARE_NAME });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    statusEl.textContent = `「${SHARE_NAME}」を保存しました。LINE などでファイルとして送れます。`;
+  } catch { statusEl.textContent = 'この環境ではファイルを保存できませんでした。'; }
+}
+async function shareFile(withRoutes, statusEl) {
+  const html = buildShareHtml(withRoutes);
+  let file = null;
+  try { file = new File([html], SHARE_NAME, { type: 'text/html' }); } catch { file = null; }
+  if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: '駅・バス時刻' }); statusEl.textContent = '送り先のアプリを開きました。'; return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  downloadFile(html, statusEl); // ファイルを直接送れないときは保存する
+}
+async function copyText(text, statusEl) {
+  try { await navigator.clipboard.writeText(text); statusEl.textContent = 'URLをコピーしました。LINE などに貼り付けて送れます。'; }
+  catch { statusEl.textContent = 'コピーできませんでした。上のURLを長押ししてコピーしてください。'; }
+}
+async function shareUrl(statusEl) {
+  const url = pageUrl();
+  if (navigator.share) {
+    try { await navigator.share({ title: '駅・バス時刻', url }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  copyText(url, statusEl);
+}
+function externalUrl() {
+  const u = pageUrl();
+  if (isLineApp) return u + (u.includes('?') ? '&' : '?') + 'openExternalBrowser=1'; // LINE の中のブラウザから外へ
+  if (isAndroid) { const x = new URL(u); return `intent://${x.host}${x.pathname}${x.search}#Intent;scheme=${x.protocol.replace(':', '')};end`; }
+  return u;
+}
+function renderShare() {
+  const body = $('#shareBody');
+  body.textContent = '';
+  const status = h('p', { class: 'msg', role: 'status', 'aria-live': 'polite' });
+  const web = isWebUrl();
+
+  if (isInApp && web) {
+    body.append(h('section', { class: 'share-sec' },
+      h('h3', { text: 'ブラウザで開き直す' }),
+      h('div', { class: 'notice', text: 'LINE などのアプリの中で開いています。登録した区間をきちんと残すため、Safari や Chrome で開いてください。' }),
+      h('div', { class: 'share-actions' }, h('a', { class: 'btn btn-primary', href: externalUrl(), rel: 'noopener', text: isIOS ? 'Safari で開く' : 'ブラウザで開く' })),
+      !isLineApp ? h('p', { text: '開かないときは、画面の「…」などのメニューから「ブラウザで開く」を選んでください。' }) : null));
+  }
+
+  if (web) {
+    const url = pageUrl();
+    const qr = h('div', { class: 'qr', role: 'img', 'aria-label': 'このページのURLのQRコード' });
+    try {
+      const q = qrcode(0, 'M'); q.addData(url); q.make();
+      qr.innerHTML = q.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+    } catch { qr.textContent = 'QRコードを作れませんでした'; }
+    const lineShare = 'https://line.me/R/share?text=' + encodeURIComponent('駅・バス時刻\n' + url);
+    body.append(h('section', { class: 'share-sec' },
+      h('h3', { text: 'スマホですぐブラウザで開く' }),
+      h('div', { class: 'qr-box' }, qr,
+        h('p', { style: 'flex:1 1 180px;margin:0', text: 'スマホのカメラでこのQRコードを読むと、ブラウザでこのアプリが開きます。開いたら共有ボタンから「ホーム画面に追加」を選ぶと、次からアプリのように開けます。' })),
+      h('div', { class: 'url-text', text: url }),
+      h('div', { class: 'share-actions', style: 'margin-top:10px' },
+        h('a', { class: 'btn btn-primary', href: lineShare, target: '_blank', rel: 'noopener noreferrer', text: 'LINEでURLを送る' }),
+        h('button', { class: 'btn', type: 'button', onclick: () => shareUrl(status), text: 'ほかのアプリで送る' }),
+        h('button', { class: 'btn', type: 'button', onclick: () => copyText(url, status), text: 'URLをコピー' })),
+      h('p', { text: 'URLで開いた端末では、登録した区間は空の状態から始まります。区間ごと渡したいときは、下の「HTMLファイルで送る」を使ってください。' })));
+  } else {
+    body.append(h('section', { class: 'share-sec' },
+      h('h3', { text: 'スマホですぐブラウザで開く' }),
+      h('div', { class: 'notice', text: 'このページは端末の中のファイルとして開いているため、URLやQRコードでは渡せません。Web（GitHub Pages など）に置くと、QRコードを読むだけでスマホのブラウザで開けるようになります。' })));
+  }
+
+  const chk = h('input', { type: 'checkbox', id: 'shareWithRoutes', checked: state.routes.length ? true : null, disabled: state.routes.length ? null : true });
+  body.append(h('section', { class: 'share-sec' },
+    h('h3', { text: 'HTMLファイルで送る・保存する' }),
+    h('p', { text: 'このアプリを1つのファイルにして、LINE やメールで送ったり、端末に保存したりします。' }),
+    h('label', { class: 'check-row', for: 'shareWithRoutes' }, chk,
+      h('span', { text: `登録した区間（${state.routes.length}件）も入れる。駅すぱあとのアクセスキーは入れません。` })),
+    h('div', { class: 'share-actions' },
+      h('button', { class: 'btn btn-primary', type: 'button', onclick: () => shareFile(chk.checked, status), text: 'ファイルを送る（LINEなど）' }),
+      h('button', { class: 'btn', type: 'button', onclick: () => downloadFile(buildShareHtml(chk.checked), status), text: '端末に保存' })),
+    h('p', { text: '受け取った側の開き方：Android は LINE でファイルを開き「Chrome で開く」を選びます。iPhone は LINE やファイルアプリで開くとプレビュー表示になり、時刻を取得できないことがあります。iPhone では上の URL で開く方法が確実です。' })));
+  body.append(status);
+}
+$('#openShare').addEventListener('click', () => { renderShare(); openDialog(shareDlg); });
+$('#closeShare').addEventListener('click', () => closeDialog(shareDlg));
+$('#closeShare2').addEventListener('click', () => closeDialog(shareDlg));
+shareDlg.addEventListener('click', e => { if (e.target === shareDlg) closeDialog(shareDlg); });
+
+/* ---------- 送られてきたファイルの区間を取り込む ---------- */
+let seedNotice = '', seedOffer = null;
+function importSeed() {
+  let seed = null;
+  try { const t = ($('#seedData').textContent || '').trim(); if (t) seed = JSON.parse(t); } catch { seed = null; }
+  if (!seed || !Array.isArray(seed.routes) || !seed.routes.length) return;
+  const sig = String(hash(JSON.stringify(seed.routes)));
+  let done = null;
+  try { done = localStorage.getItem('ekibus.seed'); } catch { done = null; }
+  if (done === sig) return;
+  const mark = () => { try { localStorage.setItem('ekibus.seed', sig); } catch { } };
+  const valid = seed.routes.filter(r => r && r.from && r.to && r.from.id && r.to.id && PROVIDERS[r.provider]);
+  const fresh = valid.filter(r => !state.routes.some(x => x.provider === r.provider && x.from.id === r.from.id && x.to.id === r.to.id));
+  if (!fresh.length) { mark(); return; }
+  if (!state.routes.length) {
+    state.routes = fresh.map(r => ({ ...r, id: uid() }));
+    if (seed.settings) for (const k of ['provider', 'perRoute', 'maxTransfers', 'campusBreak']) if (k in seed.settings) state.settings[k] = seed.settings[k];
+    saveState(); mark();
+    seedNotice = `送られてきた区間（${fresh.length}件）を登録しました。`;
+  } else {
+    seedOffer = { routes: fresh, mark };
+  }
+}
+
+/* ---------- ホーム画面に追加（PWA の簡易対応） ---------- */
+(function addManifest() {
+  if (!/^https?:$/.test(location.protocol)) return;
+  try {
+    const icon = document.querySelector('link[rel="apple-touch-icon"]').href;
+    const start = location.href.split('#')[0];
+    const m = { name: '駅・バス時刻', short_name: '時刻', start_url: start, scope: start.replace(/[^/]*$/, ''), display: 'standalone',
+      background_color: '#FFFFFF', theme_color: '#FFFFFF', lang: 'ja', icons: [{ src: icon, sizes: '180x180', type: 'image/png' }] };
+    const l = document.createElement('link'); l.rel = 'manifest';
+    l.href = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(m));
+    document.head.appendChild(l);
+  } catch { /* 対応していなくても動作に影響なし */ }
+})();
+
+/* =====================================================================
+   起動
+   ===================================================================== */
+$('#refreshAll').addEventListener('click', () => refreshDue(true));
+window.addEventListener('online', () => { renderBanners(); refreshDue(false); });
+window.addEventListener('offline', renderBanners);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { tickClock(); tick(); } });
+window.addEventListener('pageshow', e => { if (e.persisted) { tickClock(); tick(); } });
+
+loadState();
+importSeed();
+loadCache();
+tickClock();
+syncTimeUI();
+renderAll();
+$('#favPanel').open = false;
+refreshDue(false);
+setInterval(tickClock, 1000);
+setInterval(tick, 15000);
+</script>
+</body>
+</html>
