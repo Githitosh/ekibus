@@ -167,6 +167,12 @@ select.input{padding-right:36px;background-image:linear-gradient(45deg,transpare
 .fav-sub{font-size:13px;color:var(--text-3)}
 .fav-actions{display:flex;gap:6px;flex-shrink:0}
 .fav-confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:15px}
+/* お気に入りの色分け（なし・行き・帰り） */
+.kind-seg{display:inline-flex;flex:0 0 auto;border:1px solid var(--line);border-radius:999px;background:#fff;padding:3px;gap:2px}
+.kind-seg-btn{border:0;background:transparent;border-radius:999px;min-height:36px;min-width:52px;padding:0 12px;font-size:14px;font-weight:600;color:var(--text-3);cursor:pointer}
+.kind-seg-btn[aria-checked=true]{background:#F1F3F5;color:var(--text)}
+.kind-seg-btn.go[aria-checked=true]{background:var(--go-bg);color:var(--go);box-shadow:inset 0 0 0 1px var(--go)}
+.kind-seg-btn.back[aria-checked=true]{background:var(--back-bg);color:var(--back);box-shadow:inset 0 0 0 1px var(--back)}
 .empty-note{color:var(--text-3);font-size:15px;padding:4px 0}
 
 /* ---------- メイン：区間カード ---------- */
@@ -1820,7 +1826,6 @@ function renderFavs() {
   const ul = $('#favList');
   ul.textContent = '';
   if (!state.routes.length) { ul.append(h('li', { class: 'empty-note', text: '登録された区間はまだありません。' })); return; }
-  ul.append(h('li', { class: 'empty-note', style: 'font-size:13px;padding:0 0 4px', text: '区間をタップすると、その時刻をいちばん上に表示します（もう一度タップで解除）。' }));
   state.routes.forEach((r, i) => {
     const name = `${r.from.name} → ${r.to.name}`;
     const pinned = pinnedId === r.id;
@@ -1829,6 +1834,10 @@ function renderFavs() {
       h('button', { class: 'fav-pick', type: 'button', 'aria-pressed': String(pinned), title: pinned ? 'タップで選択を解除' : 'タップすると、この区間をいちばん上に表示します', onclick: () => pinRoute(r.id) },
         h('div', { class: 'fav-name' }, pinned ? h('span', { class: 'kind-chip pin', text: '選択中' }) : null, r.kind ? h('span', { class: 'kind-chip ' + r.kind, text: KIND_JA[r.kind] }) : null, name),
         h('div', { class: 'fav-sub', text: [r.label, r.memo ? 'のりば：' + r.memo : '', providerOf(r.provider).label].filter(Boolean).join(' · ') })),
+      h('div', { class: 'kind-seg', role: 'radiogroup', 'aria-label': `${name} の色分け` },
+        ...[['', 'なし'], ['go', '行き'], ['back', '帰り']].map(([v, t]) => h('button', {
+          type: 'button', role: 'radio', class: 'kind-seg-btn' + (v ? ' ' + v : ''), 'aria-checked': String((r.kind || '') === v),
+          onclick: () => { if ((r.kind || '') === v) return; r.kind = v; saveState(); renderAll(); }, text: t }))),
       h('div', { class: 'fav-actions' },
         h('button', { class: 'icon-btn small', type: 'button', 'aria-label': `${name} を編集`, title: '名前・種類・のりばメモを編集', onclick: edit }, svg(ICON.edit)),
         h('button', { class: 'icon-btn small', type: 'button', 'aria-label': `${name} を上へ`, title: '上へ', disabled: i === 0, onclick: () => moveRoute(i, -1) }, svg(ICON.up)),
