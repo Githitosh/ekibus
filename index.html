@@ -35,6 +35,10 @@
   --danger:#B3261E;
   --warn-bg:#FFF8E6;
   --warn-line:#F1E2B8;
+  --go:#2F6FB8;              /* 行き（出勤） */
+  --go-bg:#EEF4FC;
+  --back:#A8560F;            /* 帰り（帰宅） */
+  --back-bg:#FDF1E6;
   --radius:12px;
   --font:-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Yu Gothic", Meiryo, system-ui, sans-serif;
   color-scheme:light;
@@ -147,7 +151,9 @@ select.input{padding-right:36px;background-image:linear-gradient(45deg,transpare
 .hint{font-size:13px;color:var(--text-3);margin-top:10px}
 
 .favs{list-style:none;margin:0;padding:0}
-.fav{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line-2)}
+.fav{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 10px;padding:10px 0;border-top:1px solid var(--line-2)}
+.fav > div:first-child{flex:1 1 200px;min-width:0}
+.fav-actions{margin-left:auto}
 .fav:first-child{border-top:0}
 .fav-name{font-weight:600;overflow-wrap:anywhere}
 .fav-sub{font-size:13px;color:var(--text-3)}
@@ -248,6 +254,36 @@ a.btn{display:inline-flex;align-items:center;text-decoration:none}
 .notice{border:1px solid var(--warn-line);background:var(--warn-bg);border-radius:10px;padding:8px 12px;font-size:14px;margin-bottom:8px}
 
 .track.none{color:var(--text-3);border-style:dashed}
+
+/* ---------- 行き・帰りの色分け ---------- */
+.card.kind-go{border-top:4px solid var(--go)}
+.card.kind-back{border-top:4px solid var(--back)}
+.kind-chip{display:inline-block;font-size:12px;font-weight:700;border-radius:6px;padding:0 8px;line-height:1.8;margin-right:6px;vertical-align:1px}
+.kind-chip.go{background:var(--go-bg);color:var(--go)}
+.kind-chip.back{background:var(--back-bg);color:var(--back)}
+.kind-chip.pick{background:var(--accent-weak);color:var(--accent-strong);font-weight:600}
+.kind-pick{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.kind-label{font-size:14px;color:var(--text-2);margin-right:2px;flex-basis:100%}
+.kind-opt{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 14px;min-height:42px;cursor:pointer;font-size:15px;background:#fff}
+.kind-opt input{accent-color:var(--accent-strong);width:16px;height:16px;margin:0}
+.kind-opt:has(input:checked){border-color:var(--text-3);font-weight:600}
+.kind-opt.go:has(input:checked){border-color:var(--go);background:var(--go-bg);color:var(--go)}
+.kind-opt.back:has(input:checked){border-color:var(--back);background:var(--back-bg);color:var(--back)}
+.fav.kind-go{box-shadow:inset 4px 0 0 var(--go);padding-left:12px}
+.fav.kind-back{box-shadow:inset 4px 0 0 var(--back);padding-left:12px}
+.fav-edit{display:grid;gap:10px;width:100%;padding:4px 0}
+.memo{font-size:13px;color:var(--text-2);margin-top:3px}
+
+/* ---------- 出勤・帰宅の予想 ---------- */
+.predict{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-bottom:14px}
+.predict .p-title{font-weight:600;font-size:15px}
+.predict .p-why{font-size:13px;color:var(--text-2);margin-top:1px}
+.predict .seg{grid-template-columns:repeat(4,1fr);margin-top:8px}
+.predict .seg-btn{font-size:14px;min-height:38px}
+.predict .p-actions{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+.place-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line-2)}
+.place-name{font-weight:600}
+.place-val{font-size:13px;color:var(--text-3)}
 .dep-track{font-weight:600;color:var(--text)}
 .dep-track.none{font-weight:400;color:var(--text-3)}
 
@@ -349,6 +385,20 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
         </div>
       </div>
       <div class="row">
+        <div class="kind-pick" role="radiogroup" aria-label="区間の種類">
+          <span class="kind-label">種類（色分け・出勤と帰宅の予想に使います）</span>
+          <label class="kind-opt"><input type="radio" name="addKind" value="" checked><span>なし</span></label>
+          <label class="kind-opt go"><input type="radio" name="addKind" value="go"><span>行き（出勤）</span></label>
+          <label class="kind-opt back"><input type="radio" name="addKind" value="back"><span>帰り（帰宅）</span></label>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field grow">
+          <label for="memoInput">のりばメモ（任意）</label>
+          <input class="input" id="memoInput" type="text" maxlength="40" autocomplete="off" placeholder="例：金沢駅 IRいしかわ鉄道 5番線">
+        </div>
+      </div>
+      <div class="row">
         <button class="btn btn-primary" id="addBtn" type="button" disabled>お気に入りに登録</button>
         <span class="hint" id="providerHint" style="margin-top:0"></span>
       </div>
@@ -388,6 +438,9 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
       <div class="day-type" id="dayTypeLabel" aria-live="polite"></div>
     </div>
   </section>
+
+  <!-- 出勤・帰宅の予想 -->
+  <section class="predict" id="predictBar" aria-live="polite" hidden></section>
 
   <!-- メイン表示エリア -->
   <section class="board" id="board" aria-label="登録した区間の時刻"></section>
@@ -456,6 +509,28 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
         <label class="set-label" for="contactInput">連絡先（任意）</label>
         <input class="input" id="contactInput" type="text" autocomplete="off" placeholder="メールアドレスやWebサイトのURL">
         <p class="set-note">このアプリをWebに公開して Transitous を使う場合、利用方針により連絡先の掲示が求められます。入力すると画面下に表示します。</p>
+      </div>
+
+      <div class="set-block">
+        <span class="set-label">自宅・職場と現在地（GPS）</span>
+        <label class="opt" style="margin-top:0">
+          <input type="checkbox" id="useGps">
+          <span class="opt-text"><span class="opt-title">現在地から出勤・帰宅を予想して並べる</span>
+          <span class="opt-desc">自宅の近くにいるときは「行き（出勤）」、離れているときは「帰り（帰宅）」の区間をいちばん上に出します。位置情報はこの端末の中だけで使い、どこにも送りません。</span></span>
+        </label>
+        <div class="place-row">
+          <div><div class="place-name">自宅</div><div class="place-val" id="homeVal">未設定</div></div>
+          <div class="share-actions"><button class="btn btn-small" type="button" id="setHome">今いる場所を自宅にする</button><button class="btn btn-small" type="button" id="clearHome">消す</button></div>
+        </div>
+        <div class="place-row">
+          <div><div class="place-name">職場（任意）</div><div class="place-val" id="workVal">未設定</div></div>
+          <div class="share-actions"><button class="btn btn-small" type="button" id="setWork">今いる場所を職場にする</button><button class="btn btn-small" type="button" id="clearWork">消す</button></div>
+        </div>
+        <label class="set-label" for="radiusSel" style="margin-top:10px">「近く」とみなす距離</label>
+        <select class="input" id="radiusSel">
+          <option value="300">300 m</option><option value="500">500 m</option><option value="1000">1 km</option><option value="2000">2 km</option><option value="5000">5 km</option>
+        </select>
+        <p class="set-note" id="placeMsg" role="status" aria-live="polite">現在地が使えないときは、時刻（4時〜正午は出勤、それ以外は帰宅）で予想します。予想は区間の種類（行き・帰り）を選んだお気に入りに使います。</p>
       </div>
 
       <div class="set-block">
@@ -542,6 +617,7 @@ const ICON = {
   up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
   down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
   reverse: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>',
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
   warn: '<svg class="ico-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v5M12 18v.01"/></svg>',
   chev: '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>'
@@ -640,7 +716,7 @@ const DAYTYPE_JA = ['平日', '土曜', '日曜・祝日'];
 const DOW_JA = ['日', '月', '火', '水', '木', '金', '土'];
 
 /* ---------- 保存（localStorage） ---------- */
-const DEFAULT_SETTINGS = { provider: 'transitous', ekispertKey: '', perRoute: 4, maxTransfers: '', contact: '', campusBreak: false };
+const DEFAULT_SETTINGS = { provider: 'transitous', ekispertKey: '', perRoute: 4, maxTransfers: '', contact: '', campusBreak: false, useGps: false, home: null, work: null, radius: 1000 };
 const state = { settings: { ...DEFAULT_SETTINGS }, routes: [] };
 let storageOK = true;
 function storageAvailable() {
@@ -859,8 +935,8 @@ const Transitous = {
           kind: 'transit', mode, name: names.name, nameSub: names.sub,
           headsign: headsignText(lg.headsign), agency: lg.agencyName || '', agencyUrl: safeUrl(lg.agencyUrl),
           color: /^[0-9A-Fa-f]{6}$/.test(lg.routeColor || '') ? '#' + lg.routeColor : '',
-          from: { name: lg.from && lg.from.name || '', time: start, sched: sStart, track: trackText(lg.from && (lg.from.track || lg.from.scheduledTrack), mode) },
-          to: { name: lg.to && lg.to.name || '', time: end, sched: sEnd, track: trackText(lg.to && (lg.to.track || lg.to.scheduledTrack), mode) },
+          from: { name: lg.from && lg.from.name || '', time: start, sched: sStart, track: trackFrom(lg.from, mode) },
+          to: { name: lg.to && lg.to.name || '', time: end, sched: sEnd, track: trackFrom(lg.to, mode) },
           realtime: !!lg.realTime, delayMin: lg.realTime ? delayMin : 0, cancelled: !!lg.cancelled,
           stops: Array.isArray(lg.intermediateStops) ? lg.intermediateStops.length : null
         };
@@ -869,6 +945,14 @@ const Transitous = {
     }).filter(Boolean);
   }
 };
+/* 番線がデータの項目にないとき、駅名（例：「金沢 5番線」）から読み取る */
+function trackFrom(stop, mode) {
+  if (!stop) return '';
+  const t = stop.track || stop.scheduledTrack;
+  if (t) return trackText(t, mode);
+  const m = zen2han(String(stop.name || '')).match(/(\d+)\s*番(線|ホーム|のりば|乗り場)/);
+  return m ? m[1] + (m[2] === '線' || m[2] === 'ホーム' ? '番線' : '番のりば') : '';
+}
 function lineNames(lg) {
   const clean = s => String(s || '').trim();
   const ds = clean(lg.displayName), sn = clean(lg.routeShortName), ln = clean(lg.routeLongName), ts = clean(lg.tripShortName);
@@ -1261,7 +1345,9 @@ function renderBoard() {
       h('div', { text: '上の「区間を追加」で出発地と到着地を選び、お気に入りに登録してください。' })));
     return;
   }
-  for (const r of state.routes) {
+  const { list } = orderedRoutes();
+  board.dataset.order = list.map(r => r.id).join(',');
+  for (const r of list) {
     const card = h('article', { class: 'card', id: 'card-' + r.id, 'aria-labelledby': 'title-' + r.id });
     board.append(card);
     renderCard(r.id);
@@ -1282,12 +1368,19 @@ function renderCard(id) {
     route.provider === 'hokutetsu' && HOKUTETSU ? h('span', { text: HOKUTETSU.revLabel }) : null,
     res.fetchedAt ? h('span', { text: hm(new Date(res.fetchedAt)) + ' 取得' }) : null,
     busy ? h('span', { text: '更新中…' }) : null);
+  card.className = 'card' + (route.kind === 'go' ? ' kind-go' : route.kind === 'back' ? ' kind-back' : '');
+  const pred = orderedRoutes().p;
+  const isPick = !!(pred.mode && route.kind && route.kind === pred.mode);
   const head = h('header', { class: 'card-head' },
     h('div', null,
-      route.label ? h('div', { class: 'card-label', text: route.label }) : null,
+      (route.kind || route.label || isPick) ? h('div', { class: 'card-label' },
+        route.kind ? h('span', { class: 'kind-chip ' + route.kind, text: KIND_JA[route.kind] }) : null,
+        isPick ? h('span', { class: 'kind-chip pick', text: 'おすすめ' }) : null,
+        route.label || '') : null,
       h('h2', { class: 'route-title', id: 'title-' + id, style: 'margin:0' },
         h('span', { text: route.from.name }), h('span', { class: 'arrow', 'aria-label': 'から', text: '→' }), h('span', { text: route.to.name })),
-      meta),
+      meta,
+      route.memo ? h('div', { class: 'memo', text: 'のりばメモ：' + route.memo }) : null),
     refreshBtn);
 
   const body = h('div', { class: 'card-body' });
@@ -1417,6 +1510,7 @@ function tick() {
     });
   }
   refreshDue(false);
+  applyOrder(false); // 時刻での予想は時間がたつと変わる
 }
 
 /* =====================================================================
@@ -1548,16 +1642,19 @@ addBtn.addEventListener('click', () => {
   if (a.provider !== b.provider) { setAddMsg('出発と到着は同じデータから選んでください（北鉄バスの停留所どうし、など）。', true); return; }
   if (a.provider === 'hokutetsu' && !Hokutetsu.pair(a.name, b.name)) { setAddMsg('この2つの停留所の間の時刻はアプリに入っていません。', true); return; }
   if (a.id === b.id) { setAddMsg('出発と到着が同じです。', true); return; }
-  const err = addRoute(a, b, $('#labelInput').value.trim());
+  const kindEl = document.querySelector('input[name=addKind]:checked');
+  const err = addRoute(a, b, $('#labelInput').value.trim(), kindEl ? kindEl.value : '', $('#memoInput').value.trim());
   if (err) { setAddMsg(err, true); return; }
-  fromBox.clear(); toBox.clear(); $('#labelInput').value = '';
+  fromBox.clear(); toBox.clear(); $('#labelInput').value = ''; $('#memoInput').value = '';
+  document.querySelector('input[name=addKind][value=""]').checked = true;
   setAddMsg(`「${a.name} → ${b.name}」を登録しました。`);
 });
-function addRoute(a, b, label) {
+const KIND_JA = { go: '行き', back: '帰り' };
+function addRoute(a, b, label, kind = '', memo = '') {
   const provider = a.provider || state.settings.provider;
   if (state.routes.some(r => r.provider === provider && r.from.id === a.id && r.to.id === b.id)) return 'この区間はすでに登録されています。';
   const pick = s => ({ id: s.id, name: s.name, sub: s.sub || '', lat: s.lat, lon: s.lon });
-  const route = { id: uid(), provider, from: pick(a), to: pick(b), label: label || '' };
+  const route = { id: uid(), provider, from: pick(a), to: pick(b), label: label || '', kind: kind === 'go' || kind === 'back' ? kind : '', memo: memo || '' };
   state.routes.push(route);
   saveState();
   renderAll();
@@ -1583,16 +1680,34 @@ function renderFavs() {
   if (!state.routes.length) { ul.append(h('li', { class: 'empty-note', text: '登録された区間はまだありません。' })); return; }
   state.routes.forEach((r, i) => {
     const name = `${r.from.name} → ${r.to.name}`;
-    const li = h('li', { class: 'fav' });
+    const li = h('li', { class: 'fav' + (r.kind ? ' kind-' + r.kind : '') });
     const normal = () => li.replaceChildren(
       h('div', null,
-        h('div', { class: 'fav-name', text: name }),
-        h('div', { class: 'fav-sub', text: [r.label, providerOf(r.provider).label].filter(Boolean).join(' · ') })),
+        h('div', { class: 'fav-name' }, r.kind ? h('span', { class: 'kind-chip ' + r.kind, text: KIND_JA[r.kind] }) : null, name),
+        h('div', { class: 'fav-sub', text: [r.label, r.memo ? 'のりば：' + r.memo : '', providerOf(r.provider).label].filter(Boolean).join(' · ') })),
       h('div', { class: 'fav-actions' },
+        h('button', { class: 'icon-btn small', type: 'button', 'aria-label': `${name} を編集`, title: '名前・種類・のりばメモを編集', onclick: edit }, svg(ICON.edit)),
         h('button', { class: 'icon-btn small', type: 'button', 'aria-label': `${name} を上へ`, title: '上へ', disabled: i === 0, onclick: () => moveRoute(i, -1) }, svg(ICON.up)),
         h('button', { class: 'icon-btn small', type: 'button', 'aria-label': `${name} を下へ`, title: '下へ', disabled: i === state.routes.length - 1, onclick: () => moveRoute(i, 1) }, svg(ICON.down)),
         h('button', { class: 'icon-btn small', type: 'button', 'aria-label': `${name} の逆方向を追加`, title: '逆方向を追加', onclick: () => addReverse(r) }, svg(ICON.reverse)),
         h('button', { class: 'icon-btn small', type: 'button', 'aria-label': `${name} を削除`, title: '削除', style: 'color:#B3261E', onclick: confirmDel }, svg(ICON.trash))));
+    const edit = () => {
+      const nameIn = h('input', { class: 'input', type: 'text', maxlength: '30', value: r.label || '', placeholder: '名前（任意）', 'aria-label': '名前' });
+      const memoIn = h('input', { class: 'input', type: 'text', maxlength: '40', value: r.memo || '', placeholder: 'のりばメモ（例：金沢駅 5番線）', 'aria-label': 'のりばメモ' });
+      const grp = 'k-' + r.id;
+      const opt = (v, t, cls) => h('label', { class: 'kind-opt' + (cls ? ' ' + cls : '') }, h('input', { type: 'radio', name: grp, value: v, checked: (r.kind || '') === v ? true : null }), h('span', { text: t }));
+      li.replaceChildren(h('div', { class: 'fav-edit' },
+        h('div', { class: 'fav-name', text: name }),
+        h('div', { class: 'kind-pick', role: 'radiogroup', 'aria-label': '区間の種類' }, opt('', 'なし'), opt('go', '行き（出勤）', 'go'), opt('back', '帰り（帰宅）', 'back')),
+        nameIn, memoIn,
+        h('div', { class: 'share-actions' },
+          h('button', { class: 'btn btn-primary btn-small', type: 'button', onclick: () => {
+            const k = li.querySelector(`input[name="${grp}"]:checked`);
+            r.kind = k ? k.value : ''; r.label = nameIn.value.trim(); r.memo = memoIn.value.trim();
+            saveState(); renderAll();
+          }, text: '保存' }),
+          h('button', { class: 'btn btn-small', type: 'button', onclick: normal, text: 'やめる' }))));
+    };
     const confirmDel = () => li.replaceChildren(
       h('div', { class: 'fav-confirm' },
         h('span', { text: `「${name}」を削除しますか？` }),
@@ -1609,7 +1724,12 @@ function moveRoute(i, d) {
   saveState(); renderAll();
 }
 function addReverse(r) {
-  const err = addRoute({ ...r.to, provider: r.provider }, { ...r.from, provider: r.provider }, r.label ? r.label + '（逆）' : '');
+  const kind = r.kind === 'go' ? 'back' : r.kind === 'back' ? 'go' : '';
+  let label = r.label || '';
+  if (/行き/.test(label)) label = label.replace(/行き/g, '帰り');
+  else if (/帰り/.test(label)) label = label.replace(/帰り/g, '行き');
+  else if (label) label += '（逆）';
+  const err = addRoute({ ...r.to, provider: r.provider }, { ...r.from, provider: r.provider }, label, kind, '');
   const panel = $('#favPanel');
   const note = h('li', { class: 'empty-note', role: 'status', text: err || `「${r.to.name} → ${r.from.name}」を追加しました。` });
   $('#favList').append(note);
@@ -1677,6 +1797,7 @@ function updateRefreshAll() {
   $('#refreshAll').classList.toggle('is-busy', busy);
 }
 function renderAll() {
+  renderPredictBar();
   renderBanners();
   renderFavs();
   renderBoard();
@@ -1699,6 +1820,9 @@ function openSettings() {
   $('#xferSel').value = String(s.maxTransfers ?? '');
   $('#contactInput').value = s.contact || '';
   $('#campusBreak').checked = !!s.campusBreak;
+  $('#useGps').checked = !!s.useGps;
+  $('#radiusSel').value = String(s.radius || 1000);
+  syncPlaceUI();
   $('#hkInfo').textContent = Hokutetsu.ready()
     ? `北陸鉄道の公式時刻表（${HOKUTETSU.revLabel}）から ${HOKUTETSU.fetched.replace(/-/g, '/')} に収録した、金沢大学自然研前と金沢駅・武蔵ヶ辻・近江町市場・香林坊・兼六園下・金沢城・東金沢駅・西金沢の間の直通便です。平日・土曜・日曜祝日で分けています。年末年始や臨時のダイヤは入っていません。`
     : '';
@@ -1728,13 +1852,16 @@ $('#settingsForm').addEventListener('submit', e => {
     perRoute: parseInt($('#countSel').value, 10) || 4,
     maxTransfers: $('#xferSel').value,
     contact: $('#contactInput').value.trim(),
-    campusBreak: $('#campusBreak').checked
+    campusBreak: $('#campusBreak').checked,
+    useGps: $('#useGps').checked,
+    radius: parseInt($('#radiusSel').value, 10) || 1000
   };
   const changedFetch = JSON.parse(before).ekispertKey !== state.settings.ekispertKey || JSON.parse(before).maxTransfers !== state.settings.maxTransfers || JSON.parse(before).perRoute !== state.settings.perRoute || JSON.parse(before).campusBreak !== state.settings.campusBreak;
   saveState();
   closeSettings();
   renderAll();
   if (changedFetch) refreshDue(true);
+  if (state.settings.useGps) refreshPosition(true);
 });
 function resetWipe() {
   $('#wipeArea').replaceChildren(h('button', { class: 'btn btn-danger', type: 'button', id: 'wipeBtn', onclick: askWipe, text: '登録内容をすべて消去' }));
@@ -1801,6 +1928,115 @@ $('#timeInput').addEventListener('change', readTimeInputs);
 document.querySelectorAll('#timebar [data-shift]').forEach(b => b.addEventListener('click', () => {
   timeSel.at = new Date(timeSel.at.getTime() + Number(b.dataset.shift) * 60000); syncTimeUI(); onQueryChange();
 }));
+
+/* =====================================================================
+   出勤・帰宅の予想（自宅・職場と現在地）
+   ===================================================================== */
+const geo = { pos: null, at: 0, err: '', pending: false };
+let predictOverride = null; // null=自動, 'go' / 'back' = 手動, 'off' = 並べ替えない（このページを開いている間だけ）
+function distM(a, b) {
+  const rad = x => x * Math.PI / 180, R = 6371000;
+  const dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
+  const q = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(q)));
+}
+const fmtDist = m => m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(m < 10000 ? 1 : 0)} km`;
+const hasKinds = () => state.routes.some(r => r.kind === 'go' || r.kind === 'back');
+function predict() {
+  if (!hasKinds()) return { mode: null, why: '' };
+  if (predictOverride === 'off') return { mode: null, why: '登録した順に並べています', manual: true };
+  if (predictOverride) return { mode: predictOverride, why: '手動で選んでいます', manual: true };
+  const st = state.settings, r = Number(st.radius) || 1000;
+  if (st.useGps && st.home && geo.pos) {
+    const dh = distM(geo.pos, st.home);
+    if (dh <= r) return { mode: 'go', why: `自宅の近く（約${fmtDist(dh)}）にいるので、出勤と予想しました。`, gps: true };
+    if (st.work) {
+      const dw = distM(geo.pos, st.work);
+      if (dw <= r) return { mode: 'back', why: `職場の近く（約${fmtDist(dw)}）にいるので、帰宅と予想しました。`, gps: true };
+    }
+    return { mode: 'back', why: `自宅から約${fmtDist(dh)}離れているので、帰宅と予想しました。`, gps: true };
+  }
+  const hr = new Date().getHours();
+  const mode = (hr >= 4 && hr < 12) ? 'go' : 'back';
+  let why = `今の時刻（${hr}時台）から、${mode === 'go' ? '出勤' : '帰宅'}と予想しました。`;
+  if (st.useGps && !st.home) why += '自宅を設定すると現在地で予想します。';
+  else if (st.useGps && geo.pending) why += '現在地を取得しています…';
+  else if (st.useGps && geo.err) why += `現在地を使えませんでした（${geo.err}）。`;
+  else if (!st.useGps) why += '設定で「現在地から予想」をオンにすると、自宅からの距離で予想します。';
+  return { mode, why };
+}
+function orderedRoutes() {
+  const p = predict();
+  if (!p.mode) return { list: state.routes.slice(), p };
+  const rank = r => r.kind === p.mode ? 0 : (!r.kind ? 1 : 2);
+  const list = state.routes.map((r, i) => ({ r, i })).sort((a, b) => rank(a.r) - rank(b.r) || a.i - b.i).map(x => x.r);
+  return { list, p };
+}
+function renderPredictBar() {
+  const bar = $('#predictBar');
+  if (!hasKinds()) { bar.hidden = true; return; }
+  const p = predict();
+  bar.hidden = false;
+  const cur = predictOverride === null ? 'auto' : predictOverride;
+  const btn = (v, t) => h('button', { type: 'button', class: 'seg-btn', 'aria-pressed': String(cur === v), onclick: () => { predictOverride = v === 'auto' ? null : v; applyOrder(true); }, text: t });
+  const title = p.mode === 'go' ? '出勤の区間（行き）を上に表示しています' : p.mode === 'back' ? '帰宅の区間（帰り）を上に表示しています' : '登録した順に表示しています';
+  bar.replaceChildren(
+    h('div', { class: 'p-title' }, p.mode ? h('span', { class: 'kind-chip ' + p.mode, text: KIND_JA[p.mode] }) : null, title),
+    p.why ? h('div', { class: 'p-why', text: p.why }) : null,
+    h('div', { class: 'seg', role: 'group', 'aria-label': '並べ方' }, btn('auto', '自動'), btn('go', '出勤'), btn('back', '帰宅'), btn('off', 'そのまま')),
+    state.settings.useGps && state.settings.home && predictOverride === null
+      ? h('div', { class: 'p-actions' }, h('button', { class: 'btn btn-small', type: 'button', onclick: () => refreshPosition(true), text: geo.pending ? '現在地を取得中…' : '現在地を取り直す' })) : null);
+}
+function applyOrder(force) {
+  const sig = orderedRoutes().list.map(r => r.id).join(',');
+  if (force || sig !== board.dataset.order) renderBoard();
+  renderPredictBar();
+}
+function getPos(highAccuracy, fresh) {
+  return new Promise((resolve, reject) => {
+    if (!('geolocation' in navigator)) { reject(new Error('この環境では位置情報を使えません')); return; }
+    navigator.geolocation.getCurrentPosition(
+      p => resolve({ lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy }),
+      e => reject(new Error(e && e.code === 1 ? '位置情報の利用が許可されていません（ブラウザの設定を確認してください）' : e && e.code === 3 ? '時間内に取得できませんでした' : '現在地を取得できませんでした')),
+      { enableHighAccuracy: !!highAccuracy, timeout: 12000, maximumAge: (highAccuracy || fresh) ? 0 : 120000 });
+  });
+}
+async function refreshPosition(force) {
+  const st = state.settings;
+  if (!st.useGps || !st.home || geo.pending) return;
+  if (!force && geo.at && Date.now() - geo.at < 120000) return;
+  geo.pending = true; renderPredictBar();
+  try { geo.pos = await getPos(false, !!force); geo.err = ''; }
+  catch (e) { geo.err = e.message; }
+  geo.pending = false; geo.at = Date.now();
+  applyOrder(false);
+}
+function placeText(pl) {
+  if (!pl) return '未設定';
+  const d = pl.at ? new Date(pl.at) : null;
+  return `設定済み${d ? `（${d.getMonth() + 1}/${d.getDate()} に登録）` : ''}${geo.pos ? `・今いる場所から約${fmtDist(distM(geo.pos, pl))}` : ''}`;
+}
+function syncPlaceUI() {
+  $('#homeVal').textContent = placeText(state.settings.home);
+  $('#workVal').textContent = placeText(state.settings.work);
+}
+async function setPlace(key) {
+  const msg = $('#placeMsg');
+  msg.textContent = '現在地を取得しています…';
+  try {
+    const pos = await getPos(true);
+    state.settings[key] = { lat: pos.lat, lon: pos.lon, at: new Date().toISOString() };
+    if (key === 'home') { state.settings.useGps = true; $('#useGps').checked = true; }
+    geo.pos = pos; geo.at = Date.now(); geo.err = '';
+    saveState(); syncPlaceUI();
+    msg.textContent = `${key === 'home' ? '自宅' : '職場'}を今いる場所に設定しました（誤差 約${fmtDist(pos.acc || 0)}）。`;
+    applyOrder(false);
+  } catch (e) { msg.textContent = e.message; }
+}
+$('#setHome').addEventListener('click', () => setPlace('home'));
+$('#setWork').addEventListener('click', () => setPlace('work'));
+$('#clearHome').addEventListener('click', () => { state.settings.home = null; saveState(); syncPlaceUI(); applyOrder(false); });
+$('#clearWork').addEventListener('click', () => { state.settings.work = null; saveState(); syncPlaceUI(); applyOrder(false); });
 
 /* =====================================================================
    スマホへ送る・ブラウザで開く
@@ -1962,7 +2198,7 @@ function importSeed() {
 $('#refreshAll').addEventListener('click', () => refreshDue(true));
 window.addEventListener('online', () => { renderBanners(); refreshDue(false); });
 window.addEventListener('offline', renderBanners);
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { tickClock(); tick(); } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { tickClock(); tick(); refreshPosition(false); } });
 window.addEventListener('pageshow', e => { if (e.persisted) { tickClock(); tick(); } });
 
 loadState();
@@ -1973,6 +2209,7 @@ syncTimeUI();
 renderAll();
 $('#favPanel').open = false;
 refreshDue(false);
+refreshPosition(false);
 setInterval(tickClock, 1000);
 setInterval(tick, 15000);
 </script>
