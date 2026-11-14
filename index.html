@@ -1599,7 +1599,16 @@ const Hokutetsu = {
   }
 };
 
-const PROVIDERS = { transitous: Transitous, ekispert: Ekispert, demo: Demo, hokutetsu: Hokutetsu };
+/* 時刻データのない区間（Googleマップなどで確認する） */
+const NoTimetable = {
+  id: 'none', label: '時刻データなし', base: '',
+  ready() { return true; },
+  async searchStops() { return []; },
+  async plan() { throw new AppError('config', 'none'); }
+};
+const PROVIDERS = { transitous: Transitous, ekispert: Ekispert, demo: Demo, hokutetsu: Hokutetsu, none: NoTimetable };
+const HOKUTETSU_TT = 'https://arj.hokutetsu.co.jp/timetable/pathway.php';
+const isHokutetsuStop = st => !!st && (/北鉄|北陸鉄道/.test(st.ops || st.sub || '') || (st.pref === '石川県' && !!asHokutetsu(st)));
 const providerOf = id => PROVIDERS[id] || Transitous;
 
 /* =====================================================================
@@ -1635,6 +1644,8 @@ function getRes(id) {
   return r;
 }
 function requestFetch(id, { force = false } = {}) {
+  const rt = state.routes.find(r => r.id === id);
+  if (rt && rt.provider === 'none') return; // 時刻データのない区間は取りに行かない
   const res = getRes(id);
   if (res.ctrl || queue.includes(id)) return;
   if (!force && res.lastTry && Date.now() - res.lastTry < 30000) return; // 30秒以内の再取得はしない
@@ -1689,6 +1700,7 @@ async function doFetch(route) {
   }
 }
 function needsFetch(route, now) {
+  if (route.provider === 'none') return false;
   const res = results.get(route.id);
   if (res && (res.ctrl || res.queued)) return false;
   if (!res || res.qkey !== qKey()) return true;
@@ -1756,14 +1768,21 @@ function renderCard(id) {
         h('span', { text: route.from.name }), h('span', { class: 'arrow', 'aria-label': 'から', text: '→' }), h('span', { text: route.to.name })),
       meta,
       route.memo ? h('div', { class: 'memo', text: 'のりばメモ：' + route.memo }) : null,
-      gmapBtn),
-    refreshBtn);
+      route.provider === 'none' ? null : gmapBtn),
+    route.provider === 'none' ? null : refreshBtn);
 
   const body = h('div', { class: 'card-body' });
   const upcoming = visibleTrips(res, now);
   const stale = res.qkey !== qKey();
 
-  if (res.status === 'error' && !stale && !upcoming.length) {
+  if (route.provider === 'none') {
+    const hk = route.from.hk || route.to.hk;
+    body.append(h('div', { class: 'state', style: 'flex-direction:column;align-items:flex-start;gap:10px' },
+      h('div', { class: 'state-title', text: 'この区間の時刻データはアプリにありません' }),
+      h('div', { class: 'state-actions', style: 'display:flex;flex-wrap:wrap;gap:8px' },
+        h('a', { class: 'btn', href: googleMapsUrl(route), target: '_blank', rel: 'noopener noreferrer', text: 'Googleマップで時刻を見る' }),
+        hk ? h('a', { class: 'btn', href: HOKUTETSU_TT, target: '_blank', rel: 'noopener noreferrer', text: '北鉄の時刻検索' }) : null)));
+  } else if (res.status === 'error' && !stale && !upcoming.length) {
     body.append(stateBox('error', '時刻を取得できませんでした', res.error, () => requestFetch(id, { force: true })));
   } else if (!upcoming.length && (busy || stale || res.status === 'idle')) {
     body.append(h('div', { class: 'state', role: 'status' }, h('span', { class: 'spinner', 'aria-hidden': 'true' }), h('div', { class: 'state-text', text: '読み込み中…' })));
@@ -1788,6 +1807,7 @@ function renderCard(id) {
 function gmapPlace(st, provider) {
   if (st && isFinite(st.lat) && isFinite(st.lon) && st.lat != null && st.lon != null) return `${st.lat},${st.lon}`;
   if (provider === 'hokutetsu') return `${st.name} バス停 石川県金沢市`;
+  if (provider === 'none' && st) return [st.name, (st.kinds || []).includes('バス停') || st.ops ? 'バス停' : '', st.pref || ''].filter(Boolean).join(' ');
   return st ? st.name : '';
 }
 function googleMapsUrl(route) {
@@ -2070,10 +2090,20 @@ addBtn.addEventListener('click', async () => {
     // 北鉄バスの停留所や駅一覧の駅は、検索に使うデータ（Transitous など）の駅に置き換える
     const pid = [a, b].find(s => !['hokutetsu', 'station', 'busstop'].includes(s.provider))?.provider || state.settings.provider;
     addBtn.disabled = true; setAddMsg('駅を確認しています…');
+    const a0 = a, b0 = b;
     try { [a, b] = await Promise.all([resolveStop(pid, a), resolveStop(pid, b)]); }
-    catch (e) { addBtn.disabled = false; setAddMsg(errText(e), true); return; }
+    catch (e) {
+      addBtn.disabled = false;
+      setAddMsg(errText(e), true);
+      if (e && e.kind === 'notfound') addMsg.append(' ', h('button', { class: 'btn', type: 'button', id: 'addNoTT', text: '時刻なしで登録',
+        onclick: () => finishAdd({ ...a0, provider: 'none', id: 'none:' + a0.name }, { ...b0, provider: 'none', id: 'none:' + b0.name }) }));
+      return;
+    }
     addBtn.disabled = false;
   }
+  finishAdd(a, b);
+});
+function finishAdd(a, b) {
   if (a.id === b.id) { setAddMsg('出発と到着が同じです。', true); return; }
   const kindEl = document.querySelector('input[name=addKind]:checked');
   const err = addRoute(a, b, $('#labelInput').value.trim(), kindEl ? kindEl.value : '', $('#memoInput').value.trim());
@@ -2081,7 +2111,7 @@ addBtn.addEventListener('click', async () => {
   fromBox.clear(); toBox.clear(); $('#labelInput').value = ''; $('#memoInput').value = '';
   document.querySelector('input[name=addKind][value=""]').checked = true;
   setAddMsg(`「${a.name} → ${b.name}」を登録しました。`);
-});
+}
 const KIND_JA = { go: '行き', back: '帰り' };
 function asHokutetsu(st) {
   if (!Hokutetsu.ready() || !st) return null;
@@ -2125,7 +2155,9 @@ function addRoute(a, b, label, kind = '', memo = '') {
   const provider = a.provider || state.settings.provider;
   if (state.routes.some(r => r.provider === provider && r.from.id === a.id && r.to.id === b.id)) return 'この区間はすでに登録されています。';
   // 北鉄バスの停留所は名前で扱う（位置はおおよそなので保存しない）
-  const pick = s => provider === 'hokutetsu' ? { id: s.id, name: s.name, sub: s.sub || '' } : { id: s.id, name: s.name, sub: s.sub || '', lat: s.lat, lon: s.lon };
+  const pick = s => provider === 'hokutetsu' ? { id: s.id, name: s.name, sub: s.sub || '' }
+    : provider === 'none' ? { id: s.id, name: s.name, sub: s.sub || '', lat: s.lat, lon: s.lon, pref: s.pref || '', ops: s.ops || '', hk: isHokutetsuStop(s) }
+    : { id: s.id, name: s.name, sub: s.sub || '', lat: s.lat, lon: s.lon };
   const route = { id: uid(), provider, from: pick(a), to: pick(b), label: label || '', kind: kind === 'go' || kind === 'back' ? kind : '', memo: memo || '' };
   state.routes.push(route);
   saveState();
