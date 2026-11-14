@@ -296,8 +296,6 @@ a.btn{display:inline-flex;align-items:center;text-decoration:none}
 .fav.kind-back{box-shadow:inset 4px 0 0 var(--back);padding-left:12px}
 .fav-edit{display:grid;gap:10px;width:100%;padding:4px 0}
 .memo{font-size:13px;color:var(--text-2);margin-top:3px}
-.gmap-link{display:inline-block;font-size:13px;color:var(--accent-strong);margin-top:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;text-decoration:none}
-.gmap-link:hover{background:var(--accent-weak)}
 
 /* ---------- 出勤・帰宅の予想 ---------- */
 .predict{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-bottom:14px}
@@ -649,7 +647,7 @@ const SELF_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
    駅・バス時刻確認アプリ
    作成日時：2026年11月12日 22:22（JST）
    ===================================================================== */
-const APP = { name: '駅・バス時刻', created: '2026年11月12日 22:22', build: '20261114144836', repo: 'https://github.com/Githitosh/ekibus' };
+const APP = { name: '駅・バス時刻', created: '2026年11月12日 22:22', build: '20261114154124', repo: 'https://github.com/Githitosh/ekibus' };
 const LS_KEY = 'ekibus.v1';
 const LS_CACHE = 'ekibus.cache.v1';
 const TZ_JP = 'Asia/Tokyo';
@@ -1092,6 +1090,7 @@ function trackClass(place, base) {
 }
 function trackTitle(place) {
   if (!place || !place.track) return '';
+  if (place.trackKind === 'bus') return '北陸鉄道の路線別時刻表に載っているのりばです。';
   if (place.trackKind === 'range') return '公式のりば案内の範囲です。この列車の番線は駅の発車案内で確認してください。';
   if (place.trackKind === 'usual') return '収録期間のJR駅時刻表では同じ番線です。当日の案内と違うことがあります。';
   return 'JR西日本の駅時刻表（2026年11月13日〜12月26日）';
@@ -1560,8 +1559,27 @@ const Hokutetsu = {
   },
   async searchStops(text, opts) { return this.searchLocal(text, opts); },
   async plan(route, { at, arriveBy, count }) {
+    try { await HkNet.load(); }
+    catch (e) { if (!this.pair(route.from.name, route.to.name)) throw e; }
+    if (HkNet.ready && HkNet.connects(route.from.name, route.to.name)) {
+      const out = HkNet.plan(route, { at, arriveBy, count });
+      const baked = this.pair(route.from.name, route.to.name);
+      if (baked) for (const t of out.trips) {
+        if (!t || !t.dep || t.transfers) continue;
+        const v = jstYMD(t.dep);
+        let rows = baked[dayType(v)];
+        if (typeof rows === 'number') rows = baked[rows];
+        const stamp = jpParts(t.dep), hhmm = stamp.time.slice(0, 2) + ':' + stamp.time.slice(2);
+        const row = (rows || []).find(r => r[0] === hhmm);
+        if (!row) continue;
+        if (row[7]) t.flags.push({ text: row[7] + '円' });
+        const note = HOKUTETSU.notes[row[8]] || '';
+        if (note) t.flags.push({ text: note.replace('、', 'は'), warn: true });
+      }
+      return out;
+    }
     const p = this.pair(route.from.name, route.to.name);
-    if (!p) throw new AppError('plan', 'この区間の時刻はアプリに入っていません。入っているのは、金沢大学自然研前と、金沢駅・武蔵ヶ辻・近江町市場・香林坊・兼六園下・金沢城・東金沢駅・西金沢の間の直通便です。');
+    if (!p) return { trips: [] };
     const base = jstYMD(at);
     const trips = [];
     for (let k = 0; k < 8; k++) {
@@ -1585,7 +1603,7 @@ const Hokutetsu = {
     const line = HOKUTETSU.lines[r] || '';
     const leg = {
       kind: 'transit', mode: 'バス', name: line ? `${r} ${line}` : r, nameSub: via ? `${via} 経由` : '',
-      headsign: dest ? headsignText(dest) : '', agency: '北陸鉄道（北鉄バス）', agencyUrl: 'https://www.hokutetsu.co.jp/route-bus',
+      headsign: dest ? headsignText(dest) : '', agency: '北陸鉄道（北鉄バス）', agencyUrl: '',
       color: HOKUTETSU.colors[r] || '',
       from: { name: route.from.name, time: dep, sched: dep, track: fp || '' },
       to: { name: route.to.name, time: arv, sched: arv, track: tp || '' },
@@ -1599,15 +1617,249 @@ const Hokutetsu = {
   }
 };
 
-/* 時刻データのない区間（Googleマップなどで確認する） */
+/* 北鉄バスの路線別時刻表（アプリ内で出発・到着を検索する。直通と1回乗換）
+   出典：北陸鉄道 時刻・運賃検索 令和8年10月1日改正 */
+function shortStop(name) {
+  return String(name || '').replace(/［[^］]*］/g, '').replace(/（[^）]*）/g, '').replace(/\([^)]*\)/g, '').replace(/-[A-Za-zＡ-Ｚ]$/g, '').trim();
+}
+function hkKeys(name) {
+  const raw = String(name || '');
+  const out = [];
+  const add = s => {
+    const k = stopKey(String(s || '').replace(/\s/g, ''));
+    if (k && !out.includes(k)) out.push(k);
+  };
+  const base = shortStop(raw).replace(/-[A-Za-zＡ-Ｚ]$/g, '');
+  add(base);
+  const mouths = [...raw.matchAll(/［([^］]+)］/g)].map(m => m[1]).join('');
+  if (/東口/.test(mouths)) add(base + '東口');
+  if (/西口/.test(mouths)) add(base + '西口');
+  add(base.replace(/東口$/, '').replace(/西口$/, ''));
+  return out;
+}
+function poleLabel(raw) {
+  const br = (String(raw).match(/［([^］]+)］/) || [])[1] || '';
+  const pa = (String(raw).match(/（([^）]+)）/) || [])[1] || '';
+  const b = zen2han(br);
+  if (b) {
+    if (/^\d+$/.test(b)) return b + '番のりば';
+    if (/のりば|降車|乗車/.test(b)) return b;
+    if (/\d/.test(b) && /口|番/.test(b)) return b + '番のりば';
+    return b;
+  }
+  const p = zen2han(pa);
+  const m = p.match(/^([A-Z])/);
+  if (m) return m[1] + 'のりば';
+  return '';
+}
+function atMin(ymd, min) {
+  const extra = Math.floor(min / 1440);
+  const m = ((min % 1440) + 1440) % 1440;
+  const day = extra ? addDaysYMD(ymd, extra) : ymd;
+  return jstAt(day, String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'));
+}
+function firstIndex(stops, keys, from, loose) {
+  const ordered = [...keys].sort((a, b) => b.length - a.length);
+  // 東口・西口を指定したときは、反対側の口には止めない。金沢駅のような短い名前は、どの口でも止まれる
+  if (!loose) {
+    const specific = ordered.filter(k => /(?:東口|西口)$/.test(k));
+    if (specific.length) {
+      for (const k of specific) for (let i = from; i < stops.length; i++) if (stops[i].keys.includes(k)) return i;
+      return -1;
+    }
+  }
+  for (const k of ordered) for (let i = from; i < stops.length; i++) if (stops[i].keys.includes(k)) return i;
+  return -1;
+}
+const HkNet = {
+  ready: false, loading: null, stops: [], trips: [], byKey: new Map(),
+  async load() {
+    if (this.ready) return;
+    if (this.loading) return this.loading;
+    this.loading = (async () => {
+      const urls = [];
+      try { urls.push(new URL('busdata/hk.txt', location.href).href); } catch (e) { /* file:// など */ }
+      const remote = 'https://githitosh.github.io/ekibus/busdata/hk.txt';
+      if (!urls.includes(remote)) urls.push(remote);
+      let text = '';
+      for (const u of urls) {
+        try {
+          const res = await fetch(u);
+          if (!res.ok) continue;
+          const t = await res.text();
+          if (t.includes('\nS\t') && t.includes('\nT\t')) { text = t; break; }
+        } catch (e) { /* 次の場所を試す */ }
+      }
+      if (!text) throw new AppError('http', '北鉄バスの時刻表を読み込めませんでした。');
+      this.parse(text);
+      this.ready = true;
+    })();
+    try { await this.loading; }
+    catch (e) { this.loading = null; throw e; }
+  },
+  parse(text) {
+    const stops = [];
+    const trips = [];
+    const byKey = new Map();
+    const keyCache = new Map();
+    const keysOf = name => {
+      let k = keyCache.get(name);
+      if (!k) { k = hkKeys(name); keyCache.set(name, k); }
+      return k;
+    };
+    const touch = (k, ti) => {
+      let a = byKey.get(k);
+      if (!a) byKey.set(k, a = []);
+      if (a[a.length - 1] !== ti) a.push(ti);
+    };
+    for (const line of text.split('\n')) {
+      if (line.startsWith('S\t')) { stops.push(line.slice(2)); continue; }
+      if (!line.startsWith('T\t')) continue;
+      const p = line.split('\t');
+      const did = +p[3];
+      const seq = (p[5] || '').split(',').filter(Boolean).map(x => {
+        const [sid, minute] = x.split(':');
+        const name = stops[+sid] || '';
+        return { name, min: +minute, keys: keysOf(name) };
+      });
+      if (seq.length < 2) continue;
+      const ti = trips.length;
+      for (const s of seq) for (const k of s.keys) touch(k, ti);
+      trips.push({ day: +p[1], line: p[2], destName: did >= 0 ? (stops[did] || '') : '', note: p[4] === '-' ? '' : (p[4] || ''), stops: seq });
+    }
+    this.stops = stops; this.trips = trips; this.byKey = byKey;
+  },
+  idsFor(keys, day) {
+    const seen = new Set();
+    const out = [];
+    for (const k of keys) for (const ti of this.byKey.get(k) || []) {
+      if (seen.has(ti)) continue;
+      const t = this.trips[ti];
+      if (!t || t.day !== day) continue;
+      seen.add(ti); out.push(ti);
+    }
+    return out;
+  },
+  connects(aName, bName) {
+    if (!this.ready) return false;
+    const A = hkKeys(aName), B = hkKeys(bName);
+    if (!A.length || !B.length || A.some(k => B.includes(k))) return false;
+    const seen = new Set();
+    for (const k of A) for (const ti of this.byKey.get(k) || []) {
+      if (seen.has(ti)) continue;
+      seen.add(ti);
+      const t = this.trips[ti];
+      const i = firstIndex(t.stops, A, 0);
+      if (i >= 0 && firstIndex(t.stops, B, i + 1) >= 0) return true;
+    }
+    return false;
+  },
+  ride(t, i, j, ymd, offset) {
+    const a = t.stops[i], b = t.stops[j];
+    const dep = atMin(ymd, a.min + offset), arr = atMin(ymd, b.min + offset);
+    const hubs = t.stops.slice(i + 1, j).map(s => shortStop(s.name)).filter(n => /香林坊|武蔵ヶ辻|近江町市場|兼六園下|野町|小松駅|七尾駅/.test(n));
+    const via = hubs.length ? hubs[hubs.length - 1] : '';
+    return {
+      kind: 'transit', mode: 'バス', name: t.line, nameSub: via ? via + ' 経由' : '',
+      headsign: headsignText(shortStop(t.destName)), agency: '北陸鉄道（北鉄バス）', agencyUrl: '', color: '',
+      from: { name: shortStop(a.name) || a.name, time: dep, sched: dep, track: poleLabel(a.name), trackKind: poleLabel(a.name) ? 'bus' : '' },
+      to: { name: shortStop(b.name) || b.name, time: arr, sched: arr, track: poleLabel(b.name), trackKind: poleLabel(b.name) ? 'bus' : '' },
+      realtime: false, delayMin: 0, cancelled: false, stops: Math.max(0, j - i - 1)
+    };
+  },
+  onDay(aName, bName, ymd, maxXfer) {
+    const day = dayType(ymd);
+    const A = hkKeys(aName), B = hkKeys(bName);
+    if (!A.length || !B.length || A.some(k => B.includes(k))) return { directs: [], xfers: [] };
+    const fromTrips = this.idsFor(A, day);
+    const directs = [];
+    for (const ti of fromTrips) {
+      const t = this.trips[ti];
+      const i = firstIndex(t.stops, A, 0);
+      const j = i < 0 ? -1 : firstIndex(t.stops, B, i + 1);
+      if (j < 0) continue;
+      const flags = t.note ? [{ text: t.note, warn: /運休/.test(t.note) }] : [];
+      const leg = this.ride(t, i, j, ymd, 0);
+      const trip = makeTrip({ legs: [leg], start: leg.from.time, end: leg.to.time, transfers: 0, flags });
+      if (trip) directs.push(trip);
+    }
+    if (!maxXfer) return { directs, xfers: [] };
+    const toSet = new Set(this.idsFor(B, day));
+    const xfers = [];
+    for (const ti of fromTrips) {
+      if (xfers.length > 240) break;
+      const t = this.trips[ti];
+      const i = firstIndex(t.stops, A, 0);
+      if (i < 0) continue;
+      const used = new Set();
+      for (let k = i + 1; k < t.stops.length && xfers.length <= 240; k++) {
+        const hub = t.stops[k];
+        const mark = hub.keys[0];
+        if (!mark || used.has(mark)) continue;
+        used.add(mark);
+        const cands = [];
+        for (const tj of this.byKey.get(mark) || []) {
+          if (tj === ti || !toSet.has(tj)) continue;
+          const u = this.trips[tj];
+          if (!u || u.day !== day) continue;
+          const p = firstIndex(u.stops, hub.keys, 0, true);
+          if (p < 0) continue;
+          const q = firstIndex(u.stops, B, p + 1);
+          if (q < 0) continue;
+          let board = u.stops[p].min, offset = 0;
+          if (board < hub.min) { board += 1440; offset = 1440; }
+          const wait = board - hub.min;
+          if (wait < 2 || wait > 90) continue;
+          cands.push({ wait, u, p, q, offset });
+        }
+        cands.sort((a, b) => a.wait - b.wait);
+        for (const c of cands.slice(0, 3)) {
+          const leg1 = this.ride(t, i, k, ymd, 0);
+          const leg2 = this.ride(c.u, c.p, c.q, ymd, c.offset);
+          const walk = { kind: 'walk', mode: '待ち', minutes: c.wait, from: { name: leg1.to.name }, to: { name: leg2.from.name }, start: leg1.to.time, end: leg2.from.time };
+          const flags = [];
+          if (t.note) flags.push({ text: t.note, warn: /運休/.test(t.note) });
+          if (c.u.note && c.u.note !== t.note) flags.push({ text: c.u.note, warn: /運休/.test(c.u.note) });
+          const trip = makeTrip({ legs: [leg1, walk, leg2], start: leg1.from.time, end: leg2.to.time, transfers: 1, flags });
+          if (trip) xfers.push(trip);
+        }
+      }
+    }
+    return { directs, xfers };
+  },
+  plan(route, { at, arriveBy, count }) {
+    const base = jstYMD(at);
+    const mx = state.settings.maxTransfers;
+    const maxXfer = (mx === '' || mx == null) ? 1 : Math.min(1, Number(mx) || 0);
+    const directs = [];
+    const days = [];
+    for (let k = 0; k < 4; k++) {
+      const ymd = addDaysYMD(base, arriveBy ? -k : k);
+      days.push(ymd);
+      directs.push(...this.onDay(route.from.name, route.to.name, ymd, 0).directs);
+      if (pickTrips(dedupeTrips(directs), at, arriveBy, count).length >= count) return { trips: dedupeTrips(directs) };
+    }
+    if (!maxXfer) return { trips: dedupeTrips(directs) };
+    const xfers = [];
+    for (const ymd of days) {
+      xfers.push(...this.onDay(route.from.name, route.to.name, ymd, 1).xfers);
+      if (pickTrips(dedupeTrips(directs.concat(xfers)), at, arriveBy, count).length >= count) break;
+    }
+    return { trips: dedupeTrips(directs.concat(xfers)) };
+  }
+};
+/* 時刻表にない区間。読み込んだ時刻表にあれば、そこから探す */
 const NoTimetable = {
   id: 'none', label: '時刻データなし', base: '',
   ready() { return true; },
   async searchStops() { return []; },
-  async plan() { throw new AppError('config', 'none'); }
+  async plan(route, opts) {
+    await HkNet.load();
+    if (HkNet.connects(route.from.name, route.to.name)) return HkNet.plan(route, opts);
+    return { trips: [] };
+  }
 };
 const PROVIDERS = { transitous: Transitous, ekispert: Ekispert, demo: Demo, hokutetsu: Hokutetsu, none: NoTimetable };
-const HOKUTETSU_TT = 'https://arj.hokutetsu.co.jp/timetable/pathway.php';
 const isHokutetsuStop = st => !!st && (/北鉄|北陸鉄道/.test(st.ops || st.sub || '') || (st.pref === '石川県' && !!asHokutetsu(st)));
 const providerOf = id => PROVIDERS[id] || Transitous;
 
@@ -1645,7 +1897,7 @@ function getRes(id) {
 }
 function requestFetch(id, { force = false } = {}) {
   const rt = state.routes.find(r => r.id === id);
-  if (rt && rt.provider === 'none') return; // 時刻データのない区間は取りに行かない
+  if (!rt) return;
   const res = getRes(id);
   if (res.ctrl || queue.includes(id)) return;
   if (!force && res.lastTry && Date.now() - res.lastTry < 30000) return; // 30秒以内の再取得はしない
@@ -1677,6 +1929,12 @@ async function doFetch(route) {
     if (!results.has(route.id) || key !== qKey()) return;
     res.qkey = key;
     res.trips = out.trips || [];
+    if (route.provider === 'none' && res.trips.length) {
+      route.provider = 'hokutetsu';
+      const slim = s => ({ id: 'hk:' + stopKey(s.name), name: s.name, sub: '' });
+      route.from = slim(route.from); route.to = slim(route.to);
+      saveState();
+    }
     res.note = out.note || '';
     res.status = 'ok';
     res.error = null;
@@ -1700,7 +1958,6 @@ async function doFetch(route) {
   }
 }
 function needsFetch(route, now) {
-  if (route.provider === 'none') return false;
   const res = results.get(route.id);
   if (res && (res.ctrl || res.queued)) return false;
   if (!res || res.qkey !== qKey()) return true;
@@ -1750,7 +2007,6 @@ function renderCard(id) {
   const busy = !!res.ctrl || !!res.queued;
 
   const refreshBtn = h('button', { class: 'icon-btn small' + (busy ? ' is-busy' : ''), type: 'button', 'aria-label': `${route.from.name}から${route.to.name}を更新`, title: '更新', onclick: () => requestFetch(id, { force: true }) }, svg(ICON.refresh));
-  const gmapBtn = h('a', { class: 'gmap-link', href: googleMapsUrl(route), target: '_blank', rel: 'noopener noreferrer', title: 'Googleマップの乗換案内で、番線や最新の運行状況を確認します' }, 'Googleマップで確認');
   const meta = h('div', { class: 'card-meta' },
     h('span', { class: 'tag', text: prov.label }),
     route.provider === 'hokutetsu' && HOKUTETSU ? h('span', { text: HOKUTETSU.revLabel }) : null,
@@ -1767,28 +2023,21 @@ function renderCard(id) {
       h('h2', { class: 'route-title', id: 'title-' + id, style: 'margin:0' },
         h('span', { text: route.from.name }), h('span', { class: 'arrow', 'aria-label': 'から', text: '→' }), h('span', { text: route.to.name })),
       meta,
-      route.memo ? h('div', { class: 'memo', text: 'のりばメモ：' + route.memo }) : null,
-      route.provider === 'none' ? null : gmapBtn),
-    route.provider === 'none' ? null : refreshBtn);
+      route.memo ? h('div', { class: 'memo', text: 'のりばメモ：' + route.memo }) : null),
+    refreshBtn);
 
   const body = h('div', { class: 'card-body' });
   const upcoming = visibleTrips(res, now);
   const stale = res.qkey !== qKey();
 
-  if (route.provider === 'none') {
-    const hk = route.from.hk || route.to.hk;
-    body.append(h('div', { class: 'state', style: 'flex-direction:column;align-items:flex-start;gap:10px' },
-      h('div', { class: 'state-title', text: 'この区間の時刻データはアプリにありません' }),
-      h('div', { class: 'state-actions', style: 'display:flex;flex-wrap:wrap;gap:8px' },
-        h('a', { class: 'btn', href: googleMapsUrl(route), target: '_blank', rel: 'noopener noreferrer', text: 'Googleマップで時刻を見る' }),
-        hk ? h('a', { class: 'btn', href: HOKUTETSU_TT, target: '_blank', rel: 'noopener noreferrer', text: '北鉄の時刻検索' }) : null)));
-  } else if (res.status === 'error' && !stale && !upcoming.length) {
+  if (res.status === 'error' && !stale && !upcoming.length) {
     body.append(stateBox('error', '時刻を取得できませんでした', res.error, () => requestFetch(id, { force: true })));
   } else if (!upcoming.length && (busy || stale || res.status === 'idle')) {
     body.append(h('div', { class: 'state', role: 'status' }, h('span', { class: 'spinner', 'aria-hidden': 'true' }), h('div', { class: 'state-text', text: '読み込み中…' })));
   } else if (!upcoming.length) {
     const title = timeSel.mode === 'arr' ? '指定した時刻までに着く便が見つかりませんでした' : timeSel.mode === 'dep' ? '指定した時刻より後の便が見つかりませんでした' : 'この後の便が見つかりませんでした';
-    const why = route.provider === 'hokutetsu' ? 'この日はこの区間を走る便がないか、運行時間外です。時刻や日付を変えてお試しください。'
+    const why = (route.provider === 'hokutetsu' || route.provider === 'none')
+      ? 'この日はこの区間を走る便がないか、運行時間外です。時刻や日付を変えてお試しください。バスは直通と、1回の乗り換えまでを検索しています。'
       : '運行が終わったか、この区間が利用中のデータの対象外の可能性があります。駅・バス停を別の候補で登録し直すと見つかる場合があります。';
     body.append(stateBox('empty', title, why, () => requestFetch(id, { force: true })));
   } else {
@@ -1802,17 +2051,6 @@ function renderCard(id) {
   }
   card.dataset.sig = cardSig(res, now, busy);
   card.replaceChildren(head, body);
-}
-/* Googleマップの乗換案内を開く（番線・遅れなどの最新情報の確認用。データは取り込まない） */
-function gmapPlace(st, provider) {
-  if (st && isFinite(st.lat) && isFinite(st.lon) && st.lat != null && st.lon != null) return `${st.lat},${st.lon}`;
-  if (provider === 'hokutetsu') return `${st.name} バス停 石川県金沢市`;
-  if (provider === 'none' && st) return [st.name, (st.kinds || []).includes('バス停') || st.ops ? 'バス停' : '', st.pref || ''].filter(Boolean).join(' ');
-  return st ? st.name : '';
-}
-function googleMapsUrl(route) {
-  const p = new URLSearchParams({ api: '1', origin: gmapPlace(route.from, route.provider), destination: gmapPlace(route.to, route.provider), travelmode: 'transit' });
-  return 'https://www.google.com/maps/dir/?' + p.toString();
 }
 function cardSig(res, now, busy) {
   return visibleTrips(res, now).map(t => t.key).join(',') + '|' + res.status + '|' + busy + '|' + res.qkey + '|' + qKey();
@@ -1847,6 +2085,7 @@ function tripItem(routeId, t, isBest, now) {
     // 「10」のような短い系統名は種別を添える（例：バス 10）
     const nm = /^[0-9A-Za-z\-]{1,4}$/.test(zen2han(l.name)) ? `${l.mode} ${l.name}` : l.name;
     lines.append(h('span', { text: nm }));
+    if (l.nameSub) lines.append(h('span', { style: 'color:#4A4F55;font-size:14px', text: ' ' + l.nameSub }));
     if (k === 0 && l.headsign) lines.append(h('span', { style: 'color:#4A4F55;font-size:14px', text: '（' + l.headsign + '）' }));
     // 乗り換えた先の電車も、何番線から出るかを書く
     if (k > 0 && isTrainMode(l.mode)) lines.append(h('span', { class: trackClass(l.from, 'track'), style: 'margin-left:4px', title: trackTitle(l.from), text: depTrackText(l) }));
@@ -2084,10 +2323,26 @@ addBtn.addEventListener('click', async () => {
     const twin = asHokutetsu(o);
     if (twin && (hk === a ? Hokutetsu.pair(a.name, twin.name) : Hokutetsu.pair(twin.name, b.name))) { if (hk === a) b = twin; else a = twin; }
   }
-  const noTT = (x, y) => finishAdd({ ...x, provider: 'none', id: 'none:' + x.name }, { ...y, provider: 'none', id: 'none:' + y.name }, '（時刻データなし。Googleマップで時刻を見られます）');
-  if (a.provider === 'hokutetsu' && b.provider === 'hokutetsu') {
-    if (!Hokutetsu.pair(a.name, b.name)) { noTT({ ...a, pref: '石川県' }, { ...b, pref: '石川県' }); return; }
-  } else {
+  const noTT = (x, y) => finishAdd({ ...x, provider: 'none', id: 'none:' + x.name }, { ...y, provider: 'none', id: 'none:' + y.name }, '（この区間の時刻は見つかりませんでした）');
+  const busLike = s => !!(s && (s.provider === 'hokutetsu' || s.provider === 'busstop' || /北鉄|北陸鉄道/.test((s.ops || '') + (s.sub || ''))));
+  if (busLike(a) || busLike(b)) {
+    addBtn.disabled = true; setAddMsg('時刻を検索しています…');
+    let hkReady = false;
+    try { await HkNet.load(); hkReady = true; }
+    catch (e) {
+      if (!(a.provider === 'hokutetsu' && b.provider === 'hokutetsu' && Hokutetsu.pair(a.name, b.name))) {
+        addBtn.disabled = false; setAddMsg(errText(e), true); return;
+      }
+    }
+    addBtn.disabled = false;
+    if ((hkReady && HkNet.connects(a.name, b.name)) || (a.provider === 'hokutetsu' && b.provider === 'hokutetsu' && Hokutetsu.pair(a.name, b.name))) {
+      finishAdd({ ...a, provider: 'hokutetsu', id: 'hk:' + stopKey(a.name) }, { ...b, provider: 'hokutetsu', id: 'hk:' + stopKey(b.name) });
+      return;
+    }
+    if (busLike(a) && busLike(b)) { noTT(a, b); return; }
+  }
+  if (a.provider === 'hokutetsu' && b.provider === 'hokutetsu') { noTT(a, b); return; }
+  {
     // 北鉄バスの停留所や駅一覧の駅は、検索に使うデータ（Transitous など）の駅に置き換える
     const pid = [a, b].find(s => !['hokutetsu', 'station', 'busstop'].includes(s.provider))?.provider || state.settings.provider;
     addBtn.disabled = true; setAddMsg('駅を確認しています…');
@@ -2136,7 +2391,7 @@ async function resolveStop(pid, st) {
     if (st.provider === 'busstop') {
       const hit = cands.find(c => strip(c.name) === key && (c.kinds || []).includes('バス') && (!c.pref || c.pref === st.pref));
       if (hit) return { id: hit.id, name: st.name, sub: st.sub || '', lat: hit.lat, lon: hit.lon, provider: pid };
-      if (/北鉄|北陸鉄道/.test(st.ops || '')) throw new AppError('notfound', `「${st.name}」の北鉄バスの時刻はまだアプリに入っていません（入っているのは金沢大学自然研前・金沢駅・香林坊などの間だけです）。`);
+      if (/北鉄|北陸鉄道/.test(st.ops || '')) throw new AppError('notfound', `「${st.name}」から乗るバスの時刻は、アプリ内の時刻表では見つかりませんでした。`);
       throw new AppError('notfound', `「${st.name}」（${st.ops || 'バス'}）の時刻データが見つかりませんでした。`);
     }
     const rail = c => (c.kinds || []).some(k => k !== 'バス');
