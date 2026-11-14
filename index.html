@@ -649,7 +649,7 @@ const SELF_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
    駅・バス時刻確認アプリ
    作成日時：2026年11月12日 22:22（JST）
    ===================================================================== */
-const APP = { name: '駅・バス時刻', created: '2026年11月12日 22:22', repo: 'https://github.com/Githitosh/ekibus' };
+const APP = { name: '駅・バス時刻', created: '2026年11月12日 22:22', build: '20261114144836', repo: 'https://github.com/Githitosh/ekibus' };
 const LS_KEY = 'ekibus.v1';
 const LS_CACHE = 'ekibus.cache.v1';
 const TZ_JP = 'Asia/Tokyo';
@@ -2084,8 +2084,9 @@ addBtn.addEventListener('click', async () => {
     const twin = asHokutetsu(o);
     if (twin && (hk === a ? Hokutetsu.pair(a.name, twin.name) : Hokutetsu.pair(twin.name, b.name))) { if (hk === a) b = twin; else a = twin; }
   }
+  const noTT = (x, y) => finishAdd({ ...x, provider: 'none', id: 'none:' + x.name }, { ...y, provider: 'none', id: 'none:' + y.name }, '（時刻データなし。Googleマップで時刻を見られます）');
   if (a.provider === 'hokutetsu' && b.provider === 'hokutetsu') {
-    if (!Hokutetsu.pair(a.name, b.name)) { setAddMsg('この2つの停留所の間の時刻はアプリに入っていません。', true); return; }
+    if (!Hokutetsu.pair(a.name, b.name)) { noTT({ ...a, pref: '石川県' }, { ...b, pref: '石川県' }); return; }
   } else {
     // 北鉄バスの停留所や駅一覧の駅は、検索に使うデータ（Transitous など）の駅に置き換える
     const pid = [a, b].find(s => !['hokutetsu', 'station', 'busstop'].includes(s.provider))?.provider || state.settings.provider;
@@ -2094,23 +2095,22 @@ addBtn.addEventListener('click', async () => {
     try { [a, b] = await Promise.all([resolveStop(pid, a), resolveStop(pid, b)]); }
     catch (e) {
       addBtn.disabled = false;
+      if (e && e.kind === 'notfound') { noTT(a0, b0); return; }
       setAddMsg(errText(e), true);
-      if (e && e.kind === 'notfound') addMsg.append(' ', h('button', { class: 'btn', type: 'button', id: 'addNoTT', text: '時刻なしで登録',
-        onclick: () => finishAdd({ ...a0, provider: 'none', id: 'none:' + a0.name }, { ...b0, provider: 'none', id: 'none:' + b0.name }) }));
       return;
     }
     addBtn.disabled = false;
   }
   finishAdd(a, b);
 });
-function finishAdd(a, b) {
+function finishAdd(a, b, note = '') {
   if (a.id === b.id) { setAddMsg('出発と到着が同じです。', true); return; }
   const kindEl = document.querySelector('input[name=addKind]:checked');
   const err = addRoute(a, b, $('#labelInput').value.trim(), kindEl ? kindEl.value : '', $('#memoInput').value.trim());
   if (err) { setAddMsg(err, true); return; }
   fromBox.clear(); toBox.clear(); $('#labelInput').value = ''; $('#memoInput').value = '';
   document.querySelector('input[name=addKind][value=""]').checked = true;
-  setAddMsg(`「${a.name} → ${b.name}」を登録しました。`);
+  setAddMsg(`「${a.name} → ${b.name}」を登録しました。${note}`);
 }
 const KIND_JA = { go: '行き', back: '帰り' };
 function asHokutetsu(st) {
@@ -2276,9 +2276,20 @@ function tickClock() {
   $('#clock').replaceChildren(`${hh}:${mm}`, h('span', { class: 'sec', text: ':' + ss }));
   $('#date').textContent = fmtDate.format(now);
 }
+let newVersion = false;
+async function checkVersion() {
+  if (!/(^|\.)githitosh\.github\.io$/.test(location.hostname) || newVersion || APP.build.startsWith('__')) return;
+  try {
+    const t = await (await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' })).text();
+    const m = t.match(/build: '(\d{12,})'/);
+    if (m && m[1] > APP.build) { newVersion = true; renderBanners(); }
+  } catch (e) { /* 通信できないときは何もしない */ }
+}
 function renderBanners() {
   const box = $('#banners');
   box.textContent = '';
+  if (newVersion) box.append(h('div', { class: 'banner', role: 'status' }, '新しい版があります。',
+    ' ', h('button', { class: 'btn btn-small', type: 'button', onclick: () => location.reload(), text: '更新する' })));
   if (!storageOK) box.append(h('div', { class: 'banner', role: 'status', text: 'この環境では登録内容を保存できません（プライベートブラウズなど）。ページを閉じると登録が消えます。' }));
   if (navigator.onLine === false) box.append(h('div', { class: 'banner', role: 'status', text: 'オフラインです。表示しているのは最後に取得した時刻です。' }));
   if (seedNotice) box.append(h('div', { class: 'banner', role: 'status' }, seedNotice, ' ',
@@ -2963,7 +2974,8 @@ const PullRefresh = (() => {
 })();
 window.addEventListener('online', () => { renderBanners(); refreshDue(false); });
 window.addEventListener('offline', renderBanners);
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { tickClock(); tick(); refreshPosition(false); } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { tickClock(); tick(); refreshPosition(false); checkVersion(); } });
+setTimeout(checkVersion, 1500);
 window.addEventListener('pageshow', e => { if (e.persisted) { tickClock(); tick(); } });
 
 loadState();
