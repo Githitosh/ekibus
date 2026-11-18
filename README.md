@@ -14,11 +14,16 @@
 - QRコード・LINE・HTMLファイルでスマホへ送る
 
 ## データ
-- [Transitous](https://transitous.org/)（[データ提供元](https://transitous.org/sources/)、地図データ © OpenStreetMap contributors）
+時刻はアプリに入れた時刻表から出します。外部の時刻検索サービスや非公式APIは使いません（入れたデータが外から書き換えられることはありません）。
+
+- IRいしかわ鉄道（金沢・東金沢・森本・津幡・倶利伽羅）：[JR西日本 JRおでかけネット 区間時刻表](https://timetable.jr-odekake.net/)（2026年3月14日改正）から収録。平日・土休日
+- 北鉄バス（`busdata/hk.txt`）：[北陸鉄道 時刻・運賃検索](https://arj.hokutetsu.co.jp/timetable/pathway.php)（令和8年10月1日改正）の路線別時刻表から収録
 - 全国のバス停（`busdata/` 都道府県ごと）：[国土数値情報（バス停留所データ、2022年）](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P11-v3_0.html)（国土交通省、公共データ利用規約 PDL1.0）を [tomtkg/Japanese-Bus-Stop-Data](https://github.com/tomtkg/Japanese-Bus-Stop-Data)（CC BY 4.0）が抜粋したものから停留所名・事業者・系統を加工。時刻は含みません
-- 駅名のよみ・位置（ひらがな検索用）：[TrainLCD StationAPI](https://github.com/TrainLCD/StationAPI) の駅データ（© TinyKitten, MIT License）を加工
-- 駅すぱあと API（利用者が自分のアクセスキーを設定した場合）
-- 北鉄バス：[北陸鉄道 時刻・運賃検索](https://arj.hokutetsu.co.jp/timetable/pathway.php)（令和8年10月1日改正）から収録
+- 駅名のよみ・位置（ひらがな検索用）：[TrainLCD StationAPI](https://github.com/TrainLCD/StationAPI) の駅データ（© TinyKitten, MIT License）を加工してアプリに収録
+- 上の時刻表にない区間は「時刻データなし」で登録できます
+- 公式API：[駅すぱあと API](https://api-info.ekispert.com/)（利用者が設定で自分のアクセスキーを入れたときだけ使用）
+
+アプリが読み込むのは、このサイト自身のファイル（`busdata/`）と、設定した場合の駅すぱあと API だけです。
 
 表示内容の正確性は保証しません。ご乗車の前に、必ず各交通事業者の公式情報で確認してください。
 

@@ -3,7 +3,9 @@
   駅・バス時刻確認アプリ
   作成日時：2026年11月12日 22:22（JST）／更新：2026年11月13日（北鉄バス時刻表・新幹線の番線・送る機能）
   1ファイルで動くWebアプリです。登録内容はこのブラウザの localStorage に保存されます。
-  License: MIT（Transitous の利用方針に合わせ、ソースは自由に公開・改変できます）
+  License: MIT
+  時刻はアプリに入れた時刻表（北鉄バス・IRいしかわ鉄道）から出します。外部の時刻検索サービスは使いません。
+  公式API（駅すぱあと API）は、設定でアクセスキーを入れたときだけ使います。
 -->
 <html lang="ja">
 <head>
@@ -519,7 +521,7 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
           <div class="share-actions"><button class="btn btn-small" type="button" id="setHome">今いる場所を自宅にする</button><button class="btn btn-small" type="button" id="clearHome">消す</button></div>
           <div class="field place-search" id="homeSearch" data-key="home">
             <label class="sr-only" for="homeInput">自宅を住所・駅名で探す</label>
-            <input class="input" id="homeInput" type="text" autocomplete="off" enterkeyhint="search" placeholder="最寄駅名・住所（例：森本）" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="homeList">
+            <input class="input" id="homeInput" type="text" autocomplete="off" enterkeyhint="search" placeholder="最寄駅名・停留所名（例：森本）" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="homeList">
             <ul class="ac-list" id="homeList" role="listbox" hidden></ul>
             <div class="place-chips" id="homeChips"></div>
           </div>
@@ -529,7 +531,7 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
           <div class="share-actions"><button class="btn btn-small" type="button" id="setWork">今いる場所を職場にする</button><button class="btn btn-small" type="button" id="clearWork">消す</button></div>
           <div class="field place-search" id="workSearch" data-key="work">
             <label class="sr-only" for="workInput">職場を住所・駅名で探す</label>
-            <input class="input" id="workInput" type="text" autocomplete="off" enterkeyhint="search" placeholder="最寄駅名・住所（例：森本）" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="workList">
+            <input class="input" id="workInput" type="text" autocomplete="off" enterkeyhint="search" placeholder="最寄駅名・停留所名（例：森本）" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="workList">
             <ul class="ac-list" id="workList" role="listbox" hidden></ul>
             <div class="place-chips" id="workChips"></div>
           </div>
@@ -561,12 +563,12 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
       <fieldset>
         <legend>検索に使うデータ</legend>
         <label class="opt">
-          <input type="radio" name="provider" value="transitous">
-          <span class="opt-text"><span class="opt-title">Transitous</span></span>
+          <input type="radio" name="provider" value="builtin">
+          <span class="opt-text"><span class="opt-title">アプリ内の時刻表</span></span>
         </label>
         <label class="opt">
           <input type="radio" name="provider" value="ekispert">
-          <span class="opt-text"><span class="opt-title">駅すぱあと API</span></span>
+          <span class="opt-text"><span class="opt-title">駅すぱあと API（公式API）</span></span>
         </label>
         <label class="opt">
           <input type="radio" name="provider" value="demo">
@@ -599,10 +601,6 @@ legend,.set-label{font-size:15px;font-weight:600;margin-bottom:6px;padding:0;dis
         </div>
       </div>
 
-      <div class="set-block">
-        <label class="set-label" for="contactInput">連絡先（任意）</label>
-        <input class="input" id="contactInput" type="text" autocomplete="off" placeholder="メールアドレスやWebサイトのURL">
-      </div>
 
       <div class="danger-zone">
         <div id="wipeArea">
@@ -647,7 +645,7 @@ const SELF_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
    駅・バス時刻確認アプリ
    作成日時：2026年11月12日 22:22（JST）
    ===================================================================== */
-const APP = { name: '駅・バス時刻', created: '2026年11月12日 22:22', build: '20261114154124', repo: 'https://github.com/Githitosh/ekibus' };
+const APP = { name: '駅・バス時刻', created: '2026年11月12日 22:22', build: '20261118165017', repo: 'https://github.com/Githitosh/ekibus' };
 const LS_KEY = 'ekibus.v1';
 const LS_CACHE = 'ekibus.cache.v1';
 const TZ_JP = 'Asia/Tokyo';
@@ -777,7 +775,7 @@ const DAYTYPE_JA = ['平日', '土曜', '日曜・祝日'];
 const DOW_JA = ['日', '月', '火', '水', '木', '金', '土'];
 
 /* ---------- 保存（localStorage） ---------- */
-const DEFAULT_SETTINGS = { provider: 'transitous', ekispertKey: '', perRoute: 3, maxTransfers: '', contact: '', campusBreak: false, useGps: false, home: null, work: null, radius: 1000, regions: [], prefs: [], cities: [] };
+const DEFAULT_SETTINGS = { provider: 'builtin', ekispertKey: '', perRoute: 3, maxTransfers: '', contact: '', campusBreak: false, useGps: false, home: null, work: null, radius: 1000, regions: [], prefs: [], cities: [] };
 const state = { settings: { ...DEFAULT_SETTINGS }, routes: [] };
 let storageOK = true;
 function storageAvailable() {
@@ -795,9 +793,17 @@ function loadState() {
       state.routes = Array.isArray(d.routes) ? d.routes.filter(r => r && r.id && r.from && r.to && r.from.id && r.to.id) : [];
     }
   } catch { /* 壊れたデータは無視 */ }
-  if (!PROVIDERS[state.settings.provider]) state.settings.provider = 'transitous';
+  if (!['builtin', 'ekispert', 'demo'].includes(state.settings.provider)) state.settings.provider = 'builtin';
+  state.routes = state.routes.map(migrateRoute);
   state.settings.perRoute = Math.min(8, Math.max(2, parseInt(state.settings.perRoute, 10) || 3));
   for (const k of ['regions', 'prefs', 'cities']) if (!Array.isArray(state.settings[k])) state.settings[k] = [];
+}
+/* 以前の版で登録した区間（外部の検索サービスを使っていたもの）は、アプリ内の時刻表で探す区間にする */
+function migrateRoute(r) {
+  if (!r || !r.from || !r.to) return r;
+  if (['hokutetsu', 'rail', 'ekispert', 'demo', 'none'].includes(r.provider)) return r;
+  const slim = st => ({ id: 'none:' + st.name, name: st.name, sub: st.sub || '', lat: st.lat, lon: st.lon });
+  return { ...r, provider: 'none', from: slim(r.from), to: slim(r.to) };
 }
 function saveState() {
   if (!storageOK) return false;
@@ -927,87 +933,6 @@ function pickTrips(trips, at, arriveBy, count) {
   return futureTrips(trips, at).slice(0, count);
 }
 
-/* ---------- Transitous（MOTIS 2 API） ---------- */
-const Transitous = {
-  id: 'transitous', label: 'Transitous', base: 'https://api.transitous.org',
-  ready() { return true; },
-  async searchStops(text, { signal, near } = {}) {
-    const p = new URLSearchParams({ text, type: 'STOP', language: 'ja', numResults: '10' });
-    if (near && isFinite(near.lat) && isFinite(near.lon)) p.set('place', `${near.lat},${near.lon}`);
-    let data;
-    try { data = await getJSON(`${this.base}/api/v1/geocode?${p}`, { signal }); }
-    catch (e) { throw this.wrap(e); }
-    if (!Array.isArray(data)) throw new AppError('format', '検索結果の形式が想定と異なります。');
-    return data.filter(m => m && m.id && m.name).map(m => ({
-      id: String(m.id), name: String(m.name), lat: m.lat, lon: m.lon, pref: prefOfAreas(m.areas) || prefNear(m.lat, m.lon), city: cityOfAreas(m.areas),
-      sub: areaText(m.areas).split('・').filter(a => a && prefShort(a) !== prefShort(prefOfAreas(m.areas))).join('・'), kinds: modeKinds(m.modes)
-    }));
-  },
-  async plan(route, { at, arriveBy, count, signal }) {
-    const p = new URLSearchParams({
-      fromPlace: route.from.id, toPlace: route.to.id, time: at.toISOString(),
-      numItineraries: String(Math.max(count, 3)), searchWindow: '5400', timetableView: 'true',
-      detailedLegs: 'false', detailedTransfers: 'false', language: 'ja'
-    });
-    const mt = state.settings.maxTransfers;
-    if (mt !== '' && mt != null) p.set('maxTransfers', String(mt));
-    if (arriveBy) p.set('arriveBy', 'true');
-    let data = await this.call(p, signal);
-    let trips = this.parse(data);
-    const cur = arriveBy ? 'previousPageCursor' : 'nextPageCursor';
-    const enough = list => pickTrips(dedupeTrips(list), at, arriveBy, count).length >= count;
-    for (let i = 0; i < 2 && data && data[cur] && !enough(trips); i++) {
-      const p2 = new URLSearchParams(p); p2.set('pageCursor', data[cur]);
-      data = await this.call(p2, signal);
-      trips = trips.concat(this.parse(data));
-    }
-    return { trips: dedupeTrips(trips) };
-  },
-  async call(p, signal) {
-    try { return await getJSON(`${this.base}/api/v6/plan?${p}`, { signal }); }
-    catch (e) {
-      if (e instanceof AppError && e.kind === 'http' && e.status === 404 && !(e.body && e.body.error)) {
-        try { return await getJSON(`${this.base}/api/v5/plan?${p}`, { signal }); } catch (e2) { throw this.wrap(e2); }
-      }
-      throw this.wrap(e);
-    }
-  },
-  wrap(e) {
-    if (!(e instanceof AppError) || e.kind !== 'http') return e;
-    const detail = e.body && e.body.error ? `（${e.body.error}）` : '';
-    if (e.status === 429) return new AppError('http', 'Transitous へのアクセスが集中しています。少し時間をおいてから更新してください。', { status: e.status });
-    if (e.status === 400 || e.status === 422) return new AppError('http', '検索条件を受け付けてもらえませんでした' + detail + '。区間を登録し直すと直る場合があります。', { status: e.status });
-    if (e.status === 404) return new AppError('http', '駅・バス停が見つかりませんでした' + detail + '。データ更新でIDが変わった可能性があります。区間を登録し直してください。', { status: e.status });
-    if (e.status >= 500) return new AppError('http', 'Transitous のサーバーで問題が起きています（' + e.status + '）。しばらくしてから更新してください。', { status: e.status });
-    return new AppError('http', 'Transitous から取得できませんでした（' + e.status + '）' + detail + '。', { status: e.status });
-  },
-  parse(data) {
-    const its = data && Array.isArray(data.itineraries) ? data.itineraries : [];
-    return its.map(it => {
-      const legs = arr(it.legs).map(lg => {
-        const start = toDate(lg.startTime), end = toDate(lg.endTime);
-        if (STREET_MODES.has(lg.mode)) {
-          const sec = Number.isFinite(lg.duration) ? lg.duration : (start && end ? (end - start) / 1000 : 0);
-          return { kind: 'walk', mode: lg.mode === 'WALK' ? '徒歩' : '移動', minutes: Math.max(1, Math.round(sec / 60)), from: { name: lg.from && lg.from.name || '' }, to: { name: lg.to && lg.to.name || '' }, start, end };
-        }
-        const mode = TRANSIT_MODE_JA[lg.mode] || '交通機関';
-        const sStart = toDate(lg.scheduledStartTime) || start, sEnd = toDate(lg.scheduledEndTime) || end;
-        const names = lineNames(lg);
-        const delayMin = (start && sStart) ? Math.round((start - sStart) / 60000) : 0;
-        return {
-          kind: 'transit', mode, name: names.name, nameSub: names.sub,
-          headsign: headsignText(lg.headsign), agency: lg.agencyName || '', agencyUrl: safeUrl(lg.agencyUrl),
-          color: /^[0-9A-Fa-f]{6}$/.test(lg.routeColor || '') ? '#' + lg.routeColor : '',
-          from: { name: lg.from && lg.from.name || '', time: start, sched: sStart, track: trackFrom(lg.from, mode) },
-          to: { name: lg.to && lg.to.name || '', time: end, sched: sEnd, track: trackFrom(lg.to, mode) },
-          realtime: !!lg.realTime, delayMin: lg.realTime ? delayMin : 0, cancelled: !!lg.cancelled,
-          stops: Array.isArray(lg.intermediateStops) ? lg.intermediateStops.length : null
-        };
-      });
-      return makeTrip({ legs, start: toDate(it.startTime), end: toDate(it.endTime), transfers: it.transfers });
-    }).filter(Boolean);
-  }
-};
 /* 番線がデータの項目にないとき、駅名（例：「金沢 5番線」）から読み取る */
 function trackFrom(stop, mode) {
   if (!stop) return '';
@@ -1091,6 +1016,7 @@ function trackClass(place, base) {
 function trackTitle(place) {
   if (!place || !place.track) return '';
   if (place.trackKind === 'bus') return '北陸鉄道の路線別時刻表に載っているのりばです。';
+  if (place.trackKind === 'rail') return 'JR西日本の区間時刻表に載っている金沢駅ののりばです。臨時に変わることがあります。';
   if (place.trackKind === 'range') return '公式のりば案内の範囲です。この列車の番線は駅の発車案内で確認してください。';
   if (place.trackKind === 'usual') return '収録期間のJR駅時刻表では同じ番線です。当日の案内と違うことがあります。';
   return 'JR西日本の駅時刻表（2026年11月13日〜12月26日）';
@@ -1108,27 +1034,6 @@ function lineNames(lg) {
   if (ln && ln !== name && !name.includes(ln)) sub = ln;
   else if (ts && ts !== name && !name.includes(ts)) sub = ts;
   return { name, sub };
-}
-function areaText(areas) {
-  if (!Array.isArray(areas) || !areas.length) return '';
-  const out = [];
-  const d = areas.find(a => a && a.default), u = areas.find(a => a && a.unique);
-  if (d && d.name) out.push(d.name);
-  if (u && u !== d && u.name) out.push(u.name);
-  if (!out.length) {
-    const s = areas.filter(a => a && a.name).sort((a, b) => (b.adminLevel || 0) - (a.adminLevel || 0));
-    if (s[0]) out.push(s[0].name);
-  }
-  return [...new Set(out)].join('・');
-}
-function modeKinds(modes) {
-  const set = new Set();
-  for (const m of arr(modes)) {
-    const ja = TRANSIT_MODE_JA[m];
-    if (!ja) continue;
-    set.add(ja === 'バス' || ja === '高速バス' ? 'バス' : (isTrainMode(ja) ? '鉄道' : ja));
-  }
-  return [...set];
 }
 
 /* ---------- 駅すぱあと API ---------- */
@@ -1375,19 +1280,6 @@ function inArea(pref, city, f = areaFilter()) {
   return !cs || !city || cs.has(city);
 }
 const inRegion = pref => inArea(pref, '');
-/* Transitous の地域名から市区町村 */
-function cityOfAreas(areas) {
-  const a = arr(areas).filter(x => x && x.name && !PREF_BY_SHORT.has(prefShort(x.name)));
-  const lv7 = a.find(x => x.adminLevel === 7);
-  if (lv7) return lv7.name;
-  const c = a.find(x => /[市区町村]$/.test(x.name));
-  return c ? c.name : '';
-}
-/* Transitous の地域名（「石川県」「東京」など）から都道府県 */
-function prefOfAreas(areas) {
-  for (const a of arr(areas)) { const p = a && PREF_BY_SHORT.get(prefShort(a.name)); if (p) return p; }
-  return '';
-}
 /* 位置から都道府県（いちばん近い駅の県。30 km 以内） */
 function prefNear(lat, lon) {
   if (!StationIndex.list || !isFinite(lat) || !isFinite(lon)) return '';
@@ -1848,20 +1740,72 @@ const HkNet = {
     return { trips: dedupeTrips(directs.concat(xfers)) };
   }
 };
-/* 時刻表にない区間。読み込んだ時刻表にあれば、そこから探す */
+/* ---------- IRいしかわ鉄道（アプリ内の時刻表） ----------
+   JR西日本「JRおでかけネット」の区間時刻表（IRいしかわ鉄道・七尾線、IRいしかわ鉄道・あいの風とやま鉄道）から
+   金沢・東金沢・森本・津幡・倶利伽羅の発着を書き写して作成（2026年3月14日改正ダイヤ）。
+   1本 = [列車番号, 種別, 列車名, 行き先, 金沢のりば, 方向(d:金沢から/u:金沢へ), 直通, [各駅の[着, 発]（分）]] */
+const RAIL = {"rev":"2026年3月14日改正","src":"JR西日本 JRおでかけネット 区間時刻表（2026年11月18日・21日に確認）","stations":["金沢","東金沢","森本","津幡","倶利伽羅"],"days":{"wd":[["823M","普通","","七尾","6","d","七尾線直通",[[292,292],[296,296],[299,299],[304,306],null]],["825M","普通","","七尾","6","d","七尾線直通",[[330,330],[334,334],[337,337],[342,344],null]],["829M","普通","","七尾","6","d","七尾線直通",[[390,390],[394,394],[397,397],[402,404],null]],["831M","普通","","七尾","3","d","七尾線直通",[[415,415],[419,419],[423,423],[427,429],null]],["833M","普通","","七尾","3","d","七尾線直通",[[460,460],[464,464],[468,468],[474,476],null]],["835M","普通","","七尾","5","d","七尾線直通",[[492,492],[496,496],[499,499],[505,507],null]],["1837M","普通","","高松","5","d","七尾線直通",[[518,518],[522,522],[525,525],[530,532],null]],["839M","普通","","七尾","6","d","七尾線直通",[[593,593],[597,597],[600,600],[606,613],null]],["1841M","普通","","高松","3","d","七尾線直通",[[631,631],[635,635],[638,638],[643,645],null]],["843M","普通","","七尾","6","d","七尾線直通",[[691,691],[695,695],[698,698],[703,705],null]],["845M","普通","","七尾","3","d","七尾線直通",[[751,751],[755,755],[758,758],[764,765],null]],["847M","普通","","七尾","6","d","七尾線直通",[[811,811],[815,815],[818,818],[823,825],null]],["849M","普通","","七尾","6","d","七尾線直通",[[871,871],[875,875],[878,878],[884,886],null]],["851M","普通","","七尾","3","d","七尾線直通",[[922,922],[926,926],[929,929],[935,943],null]],["853M","普通","","七尾","7","d","七尾線直通",[[979,979],[983,983],[986,986],[991,993],null]],["855M","普通","","七尾","5","d","七尾線直通",[[1031,1031],[1035,1035],[1038,1038],[1044,1045],null]],["857M","普通","","七尾","6","d","七尾線直通",[[1055,1055],[1059,1059],[1063,1063],[1068,1070],null]],["859M","普通","","七尾","6","d","七尾線直通",[[1105,1105],[1109,1109],[1113,1113],[1118,1120],null]],["861M","普通","","七尾","6","d","七尾線直通",[[1132,1132],[1136,1136],[1140,1140],[1145,1147],null]],["863M","普通","","七尾","3","d","七尾線直通",[[1171,1171],[1175,1175],[1178,1178],[1184,1186],null]],["865M","普通","","七尾","6","d","七尾線直通",[[1195,1195],[1199,1199],[1202,1202],[1208,1210],null]],["867M","普通","","七尾","7","d","七尾線直通",[[1225,1225],[1229,1229],[1232,1232],[1238,1240],null]],["869M","普通","","七尾","6","d","七尾線直通",[[1279,1279],[1283,1283],[1286,1286],[1292,1293],null]],["1871M","普通","","羽咋","5","d","七尾線直通",[[1354,1354],[1358,1358],[1361,1361],[1366,1367],null]],["1873M","普通","","高松","6","d","七尾線直通",[[1399,1399],[1404,1404],[1407,1407],[1412,1413],null]],["1820M","普通","","金沢","5","u","七尾線直通",[[350,350],[345,345],[341,341],[334,336],null]],["822M","普通","","金沢","3","u","七尾線直通",[[395,395],[391,391],[388,388],[381,382],null]],["824M","普通","","金沢","1","u","七尾線直通",[[434,434],[430,430],[426,426],[419,420],null]],["1826M","普通","","金沢","2","u","七尾線直通",[[457,457],[453,453],[449,449],[442,444],null]],["828M","普通","","金沢","5","u","七尾線直通",[[476,476],[472,472],[468,468],[460,462],null]],["830M","普通","","金沢","1","u","七尾線直通",[[493,493],[489,489],[485,485],[470,479],null]],["832M","普通","","金沢","2","u","七尾線直通",[[518,518],[514,514],[511,511],[504,505],null]],["834M","普通","","金沢","1","u","七尾線直通",[[534,534],[531,531],[527,527],[520,521],null]],["836M","普通","","金沢","2","u","七尾線直通",[[590,590],[585,585],[581,581],[574,576],null]],["1838M","普通","","金沢","3","u","七尾線直通",[[617,617],[613,613],[609,609],[602,604],null]],["840M","普通","","金沢","2","u","七尾線直通",[[687,687],[683,683],[679,679],[672,674],null]],["3004M","特急","能登かがり火4号","金沢","5","u","七尾線直通",[[694,694],null,null,[684,684],null]],["1842M","普通","","金沢","3","u","七尾線直通",[[732,732],[728,728],[724,724],[717,719],null]],["844M","普通","","金沢","1","u","七尾線直通",[[777,777],[773,773],[769,769],[761,763],null]],["846M","普通","","金沢","1","u","七尾線直通",[[828,828],[825,825],[821,821],[814,816],null]],["848M","普通","","金沢","3","u","七尾線直通",[[901,901],[898,898],[893,893],[886,887],null]],["850M","普通","","金沢","1","u","七尾線直通",[[932,932],[928,928],[924,924],[917,919],null]],["852M","普通","","金沢","5","u","七尾線直通",[[992,992],[988,988],[984,984],[977,979],null]],["854M","普通","","金沢","1","u","七尾線直通",[[1044,1044],[1041,1041],[1037,1037],[1030,1032],null]],["856M","普通","","金沢","3","u","七尾線直通",[[1102,1102],[1098,1098],[1094,1094],[1086,1089],null]],["858M","普通","","金沢","1","u","七尾線直通",[[1133,1133],[1130,1130],[1126,1126],[1119,1121],null]],["860M","普通","","金沢","2","u","七尾線直通",[[1177,1177],[1173,1173],[1170,1170],[1163,1164],null]],["862M","普通","","金沢","2","u","七尾線直通",[[1238,1238],[1235,1235],[1231,1231],[1224,1226],null]],["864M","普通","","金沢","5","u","七尾線直通",[[1308,1308],[1303,1303],[1300,1300],[1293,1294],null]],["866M","普通","","金沢","1","u","七尾線直通",[[1358,1358],[1354,1354],[1350,1350],[1343,1345],null]],["868M","普通","","金沢","3","u","七尾線直通",[[1424,1424],[1420,1420],[1416,1416],[1409,1411],null]],["421M","普通","","富山","7","d","",[[314,314],[318,318],[321,321],[326,326],[331,331]]],["423M","普通","","富山","6","d","",[[362,362],[366,366],[369,369],[374,374],[380,380]]],["427M","普通","","泊","7","d","",[[412,412],[416,416],[419,419],[424,424],[430,430]]],["429M","普通","","黒部","6","d","",[[436,436],[441,441],[444,444],[449,449],[455,455]]],["629M","普通","","津幡","7","d","",[[475,475],[479,479],[482,482],[488,488],null]],["431M","普通","","泊","6","d","",[[481,481],[485,485],[488,488],[493,493],[499,499]]],["433M","普通","","富山","4","d","",[[530,530],[534,534],[537,537],[543,543],[548,548]]],["435M","普通","","富山","5","d","",[[564,564],[568,568],[573,573],[579,579],[585,585]]],["437M","普通","","泊","6","d","",[[605,605],[609,609],[612,612],[617,617],[623,623]]],["439M","普通","","富山","3","d","",[[665,665],[669,669],[672,672],[677,677],[683,683]]],["441M","普通","","泊","5","d","",[[725,725],[729,729],[732,732],[737,737],[743,743]]],["443M","普通","","富山","3","d","",[[785,785],[789,789],[792,792],[797,797],[803,803]]],["445M","普通","","富山","7","d","",[[825,825],[829,829],[832,832],[837,837],[843,843]]],["447M","普通","","富山","5","d","",[[863,863],[867,867],[870,870],[877,877],[883,883]]],["449M","普通","","富山","7","d","",[[905,905],[909,909],[913,913],[921,921],[927,927]]],["451M","普通","","泊","6","d","",[[940,940],[944,944],[947,947],[952,952],[957,957]]],["453M","普通","","富山","3","d","",[[958,958],[962,962],[965,965],[970,970],[975,975]]],["1655M","普通","","津幡","6","d","",[[969,969],[973,973],[977,977],[982,982],null]],["455M","普通","","泊","7","d","",[[1003,1003],[1007,1007],[1010,1010],[1015,1015],[1021,1021]]],["457M","普通","","泊","3","d","",[[1020,1020],[1024,1024],[1027,1027],[1033,1033],[1039,1039]]],["461M","普通","","糸魚川","7","d","",[[1061,1061],[1065,1065],[1068,1068],[1073,1073],[1078,1078]]],["463M","普通","","泊","4","d","",[[1078,1078],[1082,1082],[1085,1085],[1091,1091],[1096,1096]]],["467M","普通","","富山","7","d","",[[1125,1125],[1129,1129],[1133,1133],[1138,1138],[1143,1143]]],["2723M","普通","","津幡","5","d","",[[1143,1143],[1147,1147],[1150,1150],[1156,1156],null]],["469M","普通","","富山","7","d","",[[1159,1159],[1163,1163],[1166,1166],[1172,1172],[1177,1177]]],["471M","普通","","泊","6","d","",[[1177,1177],[1181,1181],[1184,1184],[1189,1189],[1194,1194]]],["473M","普通","","泊","5","d","",[[1200,1200],[1204,1204],[1207,1207],[1212,1212],[1217,1217]]],["477M","普通","","泊","6","d","",[[1240,1240],[1244,1244],[1247,1247],[1252,1252],[1258,1258]]],["479M","普通","","富山","3","d","",[[1285,1285],[1289,1289],[1292,1292],[1297,1297],[1303,1303]]],["481M","普通","","泊","6","d","",[[1320,1320],[1324,1324],[1327,1327],[1332,1332],[1338,1338]]],["483M","普通","","富山","5","d","",[[1380,1380],[1384,1384],[1387,1387],[1392,1392],[1398,1398]]],["2483M","普通","","津幡","6","d","",[[1428,1428],[1432,1432],[1435,1435],[1441,1441],null]],["420M","普通","","金沢","1","u","",[[388,388],[384,384],[381,381],[376,376],[370,370]]],["422M","普通","","金沢","1","u","",[[447,447],[443,443],[439,439],[434,434],[428,428]]],["424M","普通","","小松","1","u","",[[469,469],[465,465],[462,462],[456,456],[451,451]]],["426M","普通","","金沢","2","u","",[[504,504],[500,500],[496,496],[490,490],[485,485]]],["2426M","普通","","金沢","1","u","",[[509,509],[505,505],[501,501],[496,496],null]],["526M","普通","","金沢","4","u","",[[523,523],[519,519],[515,515],[510,510],[504,504]]],["530M","普通","","金沢","2","u","",[[552,552],[548,548],[545,545],[539,539],[532,532]]],["534M","普通","","金沢","1","u","",[[582,582],[578,578],[574,574],[569,569],[564,564]]],["428M","普通","","金沢","3","u","",[[645,645],[641,641],[637,637],[632,632],[626,626]]],["430M","普通","","金沢","5","u","",[[709,709],[704,704],[701,701],[696,696],[690,690]]],["432M","普通","","金沢","3","u","",[[769,769],[764,764],[761,761],[756,756],[750,750]]],["550M","普通","","金沢","2","u","",[[799,799],[794,794],[791,791],[786,786],[780,780]]],["554M","普通","","金沢","2","u","",[[859,859],[854,854],[851,851],[846,846],[840,840]]],["556M","普通","","金沢","5","u","",[[889,889],[884,884],[881,881],[876,876],[870,870]]],["434M","普通","","金沢","2","u","",[[919,919],[916,916],[912,912],[907,907],[900,900]]],["436M","普通","","金沢","3","u","",[[944,944],[941,941],[937,937],[932,932],[927,927]]],["438M","普通","","金沢","5","u","",[[977,977],[974,974],[970,970],[965,965],[959,959]]],["2438M","普通","","金沢","4","u","",[[1013,1013],[1009,1009],[1005,1005],[1000,1000],null]],["440M","普通","","金沢","1","u","",[[1019,1019],[1016,1016],[1012,1012],[1007,1007],[1001,1001]]],["442M","普通","","金沢","4","u","",[[1065,1065],[1061,1061],[1058,1058],[1053,1053],[1047,1047]]],["444M","普通","","福井","1","u","",[[1096,1096],[1092,1092],[1088,1088],[1083,1083],[1078,1078]]],["446M","普通","","金沢","5","u","",[[1122,1122],[1118,1118],[1114,1114],[1109,1109],[1104,1104]]],["448M","普通","","金沢","2","u","",[[1146,1146],[1142,1142],[1138,1138],[1133,1133],[1128,1128]]],["450M","普通","","金沢","5","u","",[[1183,1183],[1178,1178],[1174,1174],[1169,1169],[1164,1164]]],["576M","普通","","金沢","1","u","",[[1203,1203],[1200,1200],[1196,1196],[1191,1191],[1186,1186]]],["582M","普通","","金沢","3","u","",[[1250,1250],[1246,1246],[1242,1242],[1237,1237],[1232,1232]]],["452M","普通","","金沢","2","u","",[[1291,1291],[1287,1287],[1284,1284],[1278,1278],[1273,1273]]],["454M","普通","","金沢","2","u","",[[1315,1315],[1312,1312],[1308,1308],[1303,1303],[1298,1298]]],["588M","普通","","金沢","5","u","",[[1364,1364],[1360,1360],[1356,1356],[1351,1351],[1346,1346]]],["456M","普通","","金沢","2","u","",[[1410,1410],[1406,1406],[1402,1402],[1397,1397],[1391,1391]]],["458M","普通","","金沢","5","u","",[[1471,1471],[1468,1468],[1464,1464],[1459,1459],[1453,1453]]]],"hol":[["823M","普通","","七尾","6","d","七尾線直通",[[292,292],[296,296],[299,299],[304,306],null]],["825M","普通","","七尾","6","d","七尾線直通",[[330,330],[334,334],[337,337],[342,344],null]],["829M","普通","","七尾","6","d","七尾線直通",[[390,390],[394,394],[397,397],[402,404],null]],["831M","普通","","七尾","3","d","七尾線直通",[[415,415],[419,419],[423,423],[427,429],null]],["833M","普通","","七尾","3","d","七尾線直通",[[460,460],[464,464],[468,468],[474,476],null]],["837M","普通","","七尾","5","d","七尾線直通",[[518,518],[522,522],[525,525],[530,532],null]],["839M","普通","","七尾","6","d","七尾線直通",[[593,593],[597,597],[600,600],[606,613],null]],["1841M","普通","","高松","3","d","七尾線直通",[[631,631],[635,635],[638,638],[643,645],null]],["843M","普通","","七尾","6","d","七尾線直通",[[691,691],[695,695],[698,698],[703,705],null]],["845M","普通","","七尾","3","d","七尾線直通",[[751,751],[755,755],[758,758],[764,765],null]],["847M","普通","","七尾","6","d","七尾線直通",[[811,811],[815,815],[818,818],[823,825],null]],["849M","普通","","七尾","6","d","七尾線直通",[[871,871],[875,875],[878,878],[884,886],null]],["851M","普通","","七尾","3","d","七尾線直通",[[922,922],[926,926],[929,929],[935,943],null]],["853M","普通","","七尾","7","d","七尾線直通",[[979,979],[983,983],[986,986],[991,993],null]],["855M","普通","","七尾","5","d","七尾線直通",[[1031,1031],[1035,1035],[1038,1038],[1044,1045],null]],["857M","普通","","七尾","6","d","七尾線直通",[[1055,1055],[1059,1059],[1063,1063],[1068,1070],null]],["859M","普通","","七尾","6","d","七尾線直通",[[1105,1105],[1109,1109],[1113,1113],[1118,1120],null]],["861M","普通","","七尾","6","d","七尾線直通",[[1132,1132],[1136,1136],[1140,1140],[1145,1147],null]],["865M","普通","","七尾","6","d","七尾線直通",[[1195,1195],[1199,1199],[1202,1202],[1208,1210],null]],["867M","普通","","七尾","7","d","七尾線直通",[[1225,1225],[1229,1229],[1232,1232],[1238,1240],null]],["869M","普通","","七尾","6","d","七尾線直通",[[1279,1279],[1283,1283],[1286,1286],[1292,1293],null]],["1871M","普通","","羽咋","5","d","七尾線直通",[[1354,1354],[1358,1358],[1361,1361],[1366,1367],null]],["1873M","普通","","高松","6","d","七尾線直通",[[1399,1399],[1404,1404],[1407,1407],[1412,1413],null]],["1820M","普通","","金沢","5","u","七尾線直通",[[350,350],[345,345],[341,341],[334,336],null]],["822M","普通","","金沢","3","u","七尾線直通",[[395,395],[391,391],[388,388],[381,382],null]],["824M","普通","","金沢","1","u","七尾線直通",[[434,434],[430,430],[426,426],[419,420],null]],["1826M","普通","","金沢","2","u","七尾線直通",[[457,457],[453,453],[449,449],[442,444],null]],["830M","普通","","金沢","1","u","七尾線直通",[[493,493],[489,489],[485,485],[470,479],null]],["834M","普通","","金沢","1","u","七尾線直通",[[534,534],[531,531],[527,527],[520,521],null]],["836M","普通","","金沢","2","u","七尾線直通",[[590,590],[585,585],[581,581],[574,576],null]],["838M","普通","","金沢","3","u","七尾線直通",[[617,617],[613,613],[609,609],[602,604],null]],["840M","普通","","金沢","2","u","七尾線直通",[[687,687],[683,683],[679,679],[672,674],null]],["3004M","特急","能登かがり火4号","金沢","5","u","七尾線直通",[[694,694],null,null,[684,684],null]],["1842M","普通","","金沢","3","u","七尾線直通",[[732,732],[728,728],[724,724],[717,719],null]],["844M","普通","","金沢","1","u","七尾線直通",[[777,777],[773,773],[769,769],[761,763],null]],["846M","普通","","金沢","1","u","七尾線直通",[[828,828],[825,825],[821,821],[814,816],null]],["848M","普通","","金沢","3","u","七尾線直通",[[901,901],[898,898],[893,893],[886,887],null]],["850M","普通","","金沢","1","u","七尾線直通",[[932,932],[928,928],[924,924],[917,919],null]],["852M","普通","","金沢","5","u","七尾線直通",[[992,992],[988,988],[984,984],[977,979],null]],["854M","普通","","金沢","1","u","七尾線直通",[[1044,1044],[1041,1041],[1037,1037],[1030,1032],null]],["856M","普通","","金沢","3","u","七尾線直通",[[1102,1102],[1098,1098],[1094,1094],[1086,1089],null]],["858M","普通","","金沢","1","u","七尾線直通",[[1133,1133],[1130,1130],[1126,1126],[1119,1121],null]],["860M","普通","","金沢","2","u","七尾線直通",[[1177,1177],[1173,1173],[1170,1170],[1163,1164],null]],["862M","普通","","金沢","2","u","七尾線直通",[[1238,1238],[1235,1235],[1231,1231],[1224,1226],null]],["864M","普通","","金沢","5","u","七尾線直通",[[1308,1308],[1303,1303],[1300,1300],[1293,1294],null]],["866M","普通","","金沢","1","u","七尾線直通",[[1358,1358],[1354,1354],[1350,1350],[1343,1345],null]],["868M","普通","","金沢","3","u","七尾線直通",[[1424,1424],[1420,1420],[1416,1416],[1409,1411],null]],["421M","普通","","富山","7","d","",[[314,314],[318,318],[321,321],[326,326],[331,331]]],["423M","普通","","富山","6","d","",[[362,362],[366,366],[369,369],[374,374],[380,380]]],["427M","普通","","泊","7","d","",[[412,412],[416,416],[419,419],[424,424],[430,430]]],["429M","普通","","黒部","6","d","",[[436,436],[441,441],[444,444],[449,449],[455,455]]],["431M","普通","","泊","6","d","",[[481,481],[485,485],[488,488],[493,493],[499,499]]],["433M","普通","","富山","4","d","",[[530,530],[534,534],[537,537],[543,543],[548,548]]],["435M","普通","","富山","5","d","",[[564,564],[568,568],[573,573],[579,579],[585,585]]],["437M","普通","","泊","6","d","",[[605,605],[609,609],[612,612],[617,617],[623,623]]],["439M","普通","","富山","3","d","",[[665,665],[669,669],[672,672],[677,677],[683,683]]],["441M","普通","","泊","5","d","",[[725,725],[729,729],[732,732],[737,737],[743,743]]],["443M","普通","","富山","3","d","",[[785,785],[789,789],[792,792],[797,797],[803,803]]],["445M","普通","","富山","7","d","",[[825,825],[829,829],[832,832],[837,837],[843,843]]],["447M","普通","","富山","5","d","",[[863,863],[867,867],[870,870],[877,877],[883,883]]],["449M","普通","","富山","7","d","",[[905,905],[909,909],[913,913],[921,921],[927,927]]],["451M","普通","","泊","6","d","",[[940,940],[944,944],[947,947],[952,952],[957,957]]],["453M","普通","","富山","3","d","",[[958,958],[962,962],[965,965],[970,970],[975,975]]],["455M","普通","","泊","7","d","",[[1003,1003],[1007,1007],[1010,1010],[1015,1015],[1021,1021]]],["457M","普通","","泊","3","d","",[[1020,1020],[1024,1024],[1027,1027],[1033,1033],[1039,1039]]],["461M","普通","","糸魚川","7","d","",[[1061,1061],[1065,1065],[1068,1068],[1073,1073],[1078,1078]]],["463M","普通","","泊","4","d","",[[1078,1078],[1082,1082],[1085,1085],[1091,1091],[1096,1096]]],["467M","普通","","富山","7","d","",[[1125,1125],[1129,1129],[1133,1133],[1138,1138],[1143,1143]]],["469M","普通","","富山","7","d","",[[1159,1159],[1163,1163],[1166,1166],[1172,1172],[1177,1177]]],["471M","普通","","泊","6","d","",[[1177,1177],[1181,1181],[1184,1184],[1189,1189],[1194,1194]]],["473M","普通","","泊","5","d","",[[1200,1200],[1204,1204],[1207,1207],[1212,1212],[1217,1217]]],["477M","普通","","泊","6","d","",[[1240,1240],[1244,1244],[1247,1247],[1252,1252],[1258,1258]]],["479M","普通","","富山","3","d","",[[1285,1285],[1289,1289],[1292,1292],[1297,1297],[1303,1303]]],["481M","普通","","泊","6","d","",[[1320,1320],[1324,1324],[1327,1327],[1332,1332],[1338,1338]]],["483M","普通","","富山","5","d","",[[1380,1380],[1384,1384],[1387,1387],[1392,1392],[1398,1398]]],["2483M","普通","","津幡","6","d","",[[1428,1428],[1432,1432],[1435,1435],[1441,1441],null]],["420M","普通","","金沢","1","u","",[[388,388],[384,384],[381,381],[376,376],[370,370]]],["422M","普通","","金沢","1","u","",[[447,447],[443,443],[439,439],[434,434],[428,428]]],["424M","普通","","小松","1","u","",[[469,469],[465,465],[462,462],[456,456],[451,451]]],["426M","普通","","金沢","2","u","",[[504,504],[500,500],[496,496],[490,490],[485,485]]],["526M","普通","","金沢","4","u","",[[523,523],[519,519],[515,515],[510,510],[504,504]]],["530M","普通","","金沢","2","u","",[[552,552],[548,548],[545,545],[539,539],[532,532]]],["534M","普通","","金沢","1","u","",[[582,582],[578,578],[574,574],[569,569],[564,564]]],["428M","普通","","金沢","3","u","",[[645,645],[641,641],[637,637],[632,632],[626,626]]],["430M","普通","","金沢","5","u","",[[709,709],[704,704],[701,701],[696,696],[690,690]]],["432M","普通","","金沢","3","u","",[[769,769],[764,764],[761,761],[756,756],[750,750]]],["550M","普通","","金沢","2","u","",[[799,799],[794,794],[791,791],[786,786],[780,780]]],["554M","普通","","金沢","2","u","",[[859,859],[854,854],[851,851],[846,846],[840,840]]],["556M","普通","","金沢","5","u","",[[889,889],[884,884],[881,881],[876,876],[870,870]]],["434M","普通","","金沢","2","u","",[[919,919],[916,916],[912,912],[907,907],[900,900]]],["436M","普通","","金沢","3","u","",[[944,944],[941,941],[937,937],[932,932],[927,927]]],["438M","普通","","金沢","5","u","",[[977,977],[974,974],[970,970],[965,965],[959,959]]],["440M","普通","","金沢","1","u","",[[1019,1019],[1016,1016],[1012,1012],[1007,1007],[1001,1001]]],["442M","普通","","金沢","4","u","",[[1065,1065],[1061,1061],[1058,1058],[1053,1053],[1047,1047]]],["444M","普通","","福井","1","u","",[[1096,1096],[1092,1092],[1088,1088],[1083,1083],[1078,1078]]],["446M","普通","","金沢","5","u","",[[1122,1122],[1118,1118],[1114,1114],[1109,1109],[1104,1104]]],["448M","普通","","金沢","2","u","",[[1146,1146],[1142,1142],[1138,1138],[1133,1133],[1128,1128]]],["450M","普通","","金沢","5","u","",[[1183,1183],[1178,1178],[1174,1174],[1169,1169],[1164,1164]]],["576M","普通","","金沢","1","u","",[[1203,1203],[1200,1200],[1196,1196],[1191,1191],[1186,1186]]],["582M","普通","","金沢","3","u","",[[1250,1250],[1246,1246],[1242,1242],[1237,1237],[1232,1232]]],["452M","普通","","金沢","2","u","",[[1291,1291],[1287,1287],[1284,1284],[1278,1278],[1273,1273]]],["454M","普通","","金沢","2","u","",[[1315,1315],[1312,1312],[1308,1308],[1303,1303],[1298,1298]]],["588M","普通","","金沢","5","u","",[[1364,1364],[1360,1360],[1356,1356],[1351,1351],[1346,1346]]],["456M","普通","","金沢","2","u","",[[1410,1410],[1406,1406],[1402,1402],[1397,1397],[1391,1391]]],["458M","普通","","金沢","5","u","",[[1471,1471],[1468,1468],[1464,1464],[1459,1459],[1453,1453]]]]}};
+const Rail = {
+  id: 'rail', label: 'IRいしかわ鉄道（アプリ内の時刻表）', base: '',
+  ready() { return !!RAIL; },
+  async searchStops() { return []; },
+  stationOf(name) {
+    if (!RAIL) return '';
+    const k = stopKey(name);
+    return RAIL.stations.find(st => stopKey(st) === k) || '';
+  },
+  connects(aName, bName) {
+    const a = this.stationOf(aName), b = this.stationOf(bName);
+    return !!a && !!b && a !== b;
+  },
+  plan(route, { at, arriveBy, count }) {
+    const A = RAIL.stations.indexOf(this.stationOf(route.from.name));
+    const B = RAIL.stations.indexOf(this.stationOf(route.to.name));
+    if (A < 0 || B < 0 || A === B) return { trips: [] };
+    const dir = B > A ? 'd' : 'u';
+    const base = jstYMD(at);
+    const trips = [];
+    for (let k = 0; k < 3; k++) {
+      const ymd = addDaysYMD(base, arriveBy ? -k : k);
+      const list = RAIL.days[dayType(ymd) === 0 ? 'wd' : 'hol'] || [];
+      for (const [no, kind, name, dest, pl, d, via, stops] of list) {
+        if (d !== dir) continue;
+        const sa = stops[A], sb = stops[B];
+        if (!sa || !sb || sa[1] == null || sb[0] == null) continue;
+        const dep = atMin(ymd, sa[1]), arr = atMin(ymd, sb[0]);
+        const plat = st => st === '金沢' && pl ? pl + '番線' : '';
+        const leg = {
+          kind: 'transit', mode: '電車',
+          name: ['IRいしかわ鉄道線', kind === '普通' ? '' : kind, name].filter(Boolean).join(' '),
+          nameSub: [via, '列車番号 ' + no].filter(Boolean).join('・'),
+          headsign: headsignText(dest), agency: via ? 'JR西日本（七尾線直通）' : 'IRいしかわ鉄道', agencyUrl: '', color: '',
+          from: { name: route.from.name, time: dep, sched: dep, track: plat(RAIL.stations[A]), trackKind: plat(RAIL.stations[A]) ? 'rail' : '' },
+          to: { name: route.to.name, time: arr, sched: arr, track: plat(RAIL.stations[B]), trackKind: plat(RAIL.stations[B]) ? 'rail' : '' },
+          realtime: false, delayMin: 0, cancelled: false, stops: Math.max(0, Math.abs(B - A) - 1)
+        };
+        const trip = makeTrip({ legs: [leg], start: dep, end: arr, transfers: 0, flags: [] });
+        if (trip) trips.push(trip);
+      }
+      if (pickTrips(dedupeTrips(trips), at, arriveBy, count).length >= count) break;
+    }
+    return { trips: dedupeTrips(trips) };
+  }
+};
+/* 時刻表にない区間。アプリ内の時刻表（IRいしかわ鉄道・北鉄バス）にあれば、そこから探す */
 const NoTimetable = {
   id: 'none', label: '時刻データなし', base: '',
   ready() { return true; },
   async searchStops() { return []; },
   async plan(route, opts) {
+    if (Rail.ready() && Rail.connects(route.from.name, route.to.name)) return { ...Rail.plan(route, opts), via: 'rail' };
     await HkNet.load();
-    if (HkNet.connects(route.from.name, route.to.name)) return HkNet.plan(route, opts);
-    return { trips: [] };
+    if (HkNet.connects(route.from.name, route.to.name)) return { ...HkNet.plan(route, opts), via: 'hokutetsu' };
+    return { trips: [], nodata: true };
   }
 };
-const PROVIDERS = { transitous: Transitous, ekispert: Ekispert, demo: Demo, hokutetsu: Hokutetsu, none: NoTimetable };
+const PROVIDERS = { ekispert: Ekispert, demo: Demo, hokutetsu: Hokutetsu, rail: Rail, none: NoTimetable };
 const isHokutetsuStop = st => !!st && (/北鉄|北陸鉄道/.test(st.ops || st.sub || '') || (st.pref === '石川県' && !!asHokutetsu(st)));
-const providerOf = id => PROVIDERS[id] || Transitous;
+const providerOf = id => PROVIDERS[id] || NoTimetable;
 
 /* =====================================================================
    時刻の指定（今すぐ／出発時刻／到着時刻）
@@ -1929,12 +1873,14 @@ async function doFetch(route) {
     if (!results.has(route.id) || key !== qKey()) return;
     res.qkey = key;
     res.trips = out.trips || [];
-    if (route.provider === 'none' && res.trips.length) {
-      route.provider = 'hokutetsu';
-      const slim = s => ({ id: 'hk:' + stopKey(s.name), name: s.name, sub: '' });
+    if (route.provider === 'none' && res.trips.length && out.via) {
+      // アプリ内の時刻表で見つかった区間は、その時刻表の区間にする
+      route.provider = out.via;
+      const slim = s => ({ id: (out.via === 'rail' ? 'ir:' + Rail.stationOf(s.name) : 'hk:' + stopKey(s.name)), name: s.name, sub: '' });
       route.from = slim(route.from); route.to = slim(route.to);
       saveState();
     }
+    res.nodata = !!out.nodata;
     res.note = out.note || '';
     res.status = 'ok';
     res.error = null;
@@ -2034,6 +1980,10 @@ function renderCard(id) {
     body.append(stateBox('error', '時刻を取得できませんでした', res.error, () => requestFetch(id, { force: true })));
   } else if (!upcoming.length && (busy || stale || res.status === 'idle')) {
     body.append(h('div', { class: 'state', role: 'status' }, h('span', { class: 'spinner', 'aria-hidden': 'true' }), h('div', { class: 'state-text', text: '読み込み中…' })));
+  } else if (!upcoming.length && res.nodata) {
+    body.append(h('div', { class: 'state', role: 'status' }, h('div', { class: 'state-text' },
+      h('div', { class: 'state-title', text: 'この区間の時刻データはアプリに入っていません' }),
+      h('div', { style: 'font-size:14px;color:#4A4F55;margin-top:2px', text: '時刻が入っているのは、北鉄バスとIRいしかわ鉄道（金沢〜倶利伽羅）です。' }))));
   } else if (!upcoming.length) {
     const title = timeSel.mode === 'arr' ? '指定した時刻までに着く便が見つかりませんでした' : timeSel.mode === 'dep' ? '指定した時刻より後の便が見つかりませんでした' : 'この後の便が見つかりませんでした';
     const why = (route.provider === 'hokutetsu' || route.provider === 'none')
@@ -2223,8 +2173,8 @@ function makeStopInput(fieldEl, { role, getOther, onChange }) {
     const bias = searchBias(other);
     const qq = searchKey(q);
     const apiId = state.settings.provider;
-    // 駅一覧は Transitous のときに使う（駅すぱあとは読みでも探せる。デモは架空の駅）
-    const useIndex = apiId === 'transitous';
+    // アプリ内の時刻表のときは、アプリに入れた駅・バス停の一覧だけで探す（外部には問い合わせない）
+    const useIndex = apiId === 'builtin';
     if (useIndex) await StationIndex.load();
     if (my !== seq) return;
     const biasPref = bias ? prefNear(bias.lat, bias.lon) : '';
@@ -2241,7 +2191,7 @@ function makeStopInput(fieldEl, { role, getOther, onChange }) {
     try {
       let remote = [], remoteErr = null;
       const kanaOnly = /^[\u3041-\u309f\u30fcー]+$/.test(qq);
-      if (apiId && !(kanaOnly && local.length)) {
+      if ((apiId === 'ekispert' || apiId === 'demo') && !(kanaOnly && local.length)) {
         try { remote = (await providerOf(apiId).searchStops(q.replace(/駅$/, '') || q, { signal: ctrl.signal, near: bias })).map(x => ({ ...x, provider: apiId })); }
         catch (e) { if (e && e.name === 'AbortError') throw e; remoteErr = e; }
       }
@@ -2250,14 +2200,17 @@ function makeStopInput(fieldEl, { role, getOther, onChange }) {
       const same = (x, y) => stopKey(x.name) === stopKey(y.name) && (!isFinite(x.lat) || !isFinite(y.lat) || distM(x, y) < 1500);
       const isBus = x => x.provider === 'hokutetsu' || x.provider === 'busstop' || (x.kinds || []).some(k => k === 'バス' || k === 'バス停');
       const sameBus = (x, y) => y.provider === 'busstop' && stopKey(x.name) === stopKey(y.name) && (!x.pref || x.pref === y.pref);
-      // バス停の一覧と同じ名前の Transitous のバス停は、時刻を出せる Transitous のほうを残す
-      const dupBus = local.filter(y => remote.some(x => isBus(x) && sameBus(x, y)));
+      // バス停の一覧と同じ名前の駅すぱあとのバス停は、駅すぱあとのほうを残す
+      // 駅すぱあと（公式API）を選んでいるときは、同じ名前の北鉄の停留所も駅すぱあとの候補にそろえる
+      const sameHk = (x, y) => apiId === 'ekispert' && y.provider === 'hokutetsu' && stopKey(x.name) === stopKey(y.name);
+      const dupBus = local.filter(y => remote.some(x => isBus(x) && (sameBus(x, y) || sameHk(x, y))));
       if (dupBus.length) for (const y of dupBus) local.splice(local.indexOf(y), 1);
       remote = remote.filter(x => inArea(x.pref, x.city) && !local.some(y => same(x, y) && isBus(x) === isBus(y)))
         .map(x => ({ ...x, score: matchRank(qq, x.name) + distScore(bias, x) + 0.3 }))
         .filter(x => x.score < 9 || !local.length);
       items = [...local, ...remote].sort((a, b) => a.score - b.score).slice(0, 12); activeIdx = -1;
       if (!items.length && remoteErr) throw remoteErr;
+      if (!items.length) { showMsg('見つかりませんでした。'); return; }
       if (document.activeElement === input) renderItems(remoteErr ? errText(remoteErr) : '');
     } catch (e) {
       if (e && e.name === 'AbortError') return;
@@ -2323,7 +2276,7 @@ addBtn.addEventListener('click', async () => {
     const twin = asHokutetsu(o);
     if (twin && (hk === a ? Hokutetsu.pair(a.name, twin.name) : Hokutetsu.pair(twin.name, b.name))) { if (hk === a) b = twin; else a = twin; }
   }
-  const noTT = (x, y) => finishAdd({ ...x, provider: 'none', id: 'none:' + x.name }, { ...y, provider: 'none', id: 'none:' + y.name }, '（この区間の時刻は見つかりませんでした）');
+  const noTT = (x, y) => finishAdd({ ...x, provider: 'none', id: 'none:' + x.name }, { ...y, provider: 'none', id: 'none:' + y.name }, '（時刻データなし：この区間の時刻表はアプリに入っていません）');
   const busLike = s => !!(s && (s.provider === 'hokutetsu' || s.provider === 'busstop' || /北鉄|北陸鉄道/.test((s.ops || '') + (s.sub || ''))));
   if (busLike(a) || busLike(b)) {
     addBtn.disabled = true; setAddMsg('時刻を検索しています…');
@@ -2342,9 +2295,15 @@ addBtn.addEventListener('click', async () => {
     if (busLike(a) && busLike(b)) { noTT(a, b); return; }
   }
   if (a.provider === 'hokutetsu' && b.provider === 'hokutetsu') { noTT(a, b); return; }
+  // IRいしかわ鉄道の駅どうし（金沢・東金沢・森本・津幡・倶利伽羅）は、アプリ内の鉄道の時刻表
+  if (!busLike(a) && !busLike(b) && Rail.ready() && Rail.connects(a.name, b.name)) {
+    finishAdd({ ...a, provider: 'rail', id: 'ir:' + Rail.stationOf(a.name) }, { ...b, provider: 'rail', id: 'ir:' + Rail.stationOf(b.name) });
+    return;
+  }
   {
-    // 北鉄バスの停留所や駅一覧の駅は、検索に使うデータ（Transitous など）の駅に置き換える
+    // 駅すぱあと（公式API）・デモのときは、その駅に置き換える。アプリ内の時刻表にない区間は「時刻データなし」で登録する
     const pid = [a, b].find(s => !['hokutetsu', 'station', 'busstop'].includes(s.provider))?.provider || state.settings.provider;
+    if (pid !== 'ekispert' && pid !== 'demo') { noTT(a, b); return; }
     addBtn.disabled = true; setAddMsg('駅を確認しています…');
     const a0 = a, b0 = b;
     try { [a, b] = await Promise.all([resolveStop(pid, a), resolveStop(pid, b)]); }
@@ -2384,22 +2343,7 @@ async function resolveStop(pid, st) {
   if (st.provider === pid) return st;
   const nm = st.name.replace(/駅$/, '') || st.name;
   const key = stopKey(nm), strip = stopKey;
-  if (pid === 'transitous') {
-    let cands = [];
-    const near = isFinite(st.lat) ? st : (st.pref ? prefCenter(st.pref) : null);
-    try { cands = await Transitous.searchStops(nm, { near }); } catch (e) { if (!isFinite(st.lat)) throw e; }
-    if (st.provider === 'busstop') {
-      const hit = cands.find(c => strip(c.name) === key && (c.kinds || []).includes('バス') && (!c.pref || c.pref === st.pref));
-      if (hit) return { id: hit.id, name: st.name, sub: st.sub || '', lat: hit.lat, lon: hit.lon, provider: pid };
-      if (/北鉄|北陸鉄道/.test(st.ops || '')) throw new AppError('notfound', `「${st.name}」から乗るバスの時刻は、アプリ内の時刻表では見つかりませんでした。`);
-      throw new AppError('notfound', `「${st.name}」（${st.ops || 'バス'}）の時刻データが見つかりませんでした。`);
-    }
-    const rail = c => (c.kinds || []).some(k => k !== 'バス');
-    const same = cands.filter(c => strip(c.name) === key && (!isFinite(st.lat) || (isFinite(c.lat) && distM(c, st) < 2000)))
-      .sort((x, y) => (rail(y) - rail(x)) || (isFinite(st.lat) ? distM(x, st) - distM(y, st) : 0));
-    if (same.length) return { id: same[0].id, name: st.name, sub: st.sub || same[0].sub || '', lat: same[0].lat, lon: same[0].lon, provider: pid };
-    if (isFinite(st.lat) && isFinite(st.lon)) return { id: `${st.lat},${st.lon}`, name: st.name, sub: st.sub || '', lat: st.lat, lon: st.lon, provider: pid };
-  } else if (pid === 'ekispert') {
+  if (pid === 'ekispert') {
     const cands = await Ekispert.searchStops(nm);
     const hit = cands.find(c => strip(c.name) === key && (c.kinds || []).includes(st.provider === 'hokutetsu' ? 'バス停' : '駅')) || cands.find(c => strip(c.name) === key);
     if (hit) return { ...hit, name: st.name, lat: st.lat, lon: st.lon, provider: pid };
@@ -2565,11 +2509,9 @@ function renderFooter() {
   f.append(h('p', { class: 'disclaimer' }, '表示内容は保証しません。乗車前に公式情報を確認してください。'));
   const src = h('p', null, 'データ出典：');
   const parts = [];
-  if (used.has('transitous')) parts.push([h('a', { href: 'https://transitous.org/', target: '_blank', rel: 'noopener noreferrer', text: 'Transitous' }), '（',
-    h('a', { href: 'https://transitous.org/sources/', target: '_blank', rel: 'noopener noreferrer', text: 'データ提供元の一覧' }), '）、地図データ © ',
-    h('a', { href: 'https://www.openstreetmap.org/copyright', target: '_blank', rel: 'noopener noreferrer', text: 'OpenStreetMap contributors' })]);
   if (used.has('ekispert')) parts.push(['Powered by ', h('a', { href: 'https://api-info.ekispert.com/', target: '_blank', rel: 'noopener noreferrer', text: '駅すぱあと API' }), '（株式会社ヴァル研究所）']);
   if (Hokutetsu.ready()) parts.push(['北鉄バスの時刻：', h('a', { href: HOKUTETSU.url, target: '_blank', rel: 'noopener noreferrer', text: '北陸鉄道 時刻・運賃検索' }), `（${HOKUTETSU.revLabel}）から収録`]);
+  if (RAIL) parts.push(['IRいしかわ鉄道の時刻：', h('a', { href: 'https://timetable.jr-odekake.net/', target: '_blank', rel: 'noopener noreferrer', text: 'JR西日本 区間時刻表' }), `（${RAIL.rev}）から収録`]);
   if (used.has('demo')) parts.push('デモ表示は架空のデータです');
   parts.push(['新幹線の番線：', h('a', { href: 'https://timetable.jr-odekake.net/', target: '_blank', rel: 'noopener noreferrer', text: 'JR西日本 駅時刻表' })]);
   parts.push(['バス停：', h('a', { href: 'https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P11-v3_0.html', target: '_blank', rel: 'noopener noreferrer', text: '国土数値情報（バス停留所データ）' }), '（国土交通省、2022年）を加工']);
@@ -2577,7 +2519,6 @@ function renderFooter() {
   parts.forEach((p, i) => { if (i) src.append(' ／ '); src.append(...[p].flat()); });
   f.append(src);
   if (APP.repo) f.append(h('p', null, 'ソースコード・連絡先：', h('a', { href: APP.repo, target: '_blank', rel: 'noopener noreferrer', text: APP.repo.replace(/^https:\/\//, '') }), '（MIT License）'));
-  if (state.settings.contact) f.append(h('p', { text: '連絡先：' + state.settings.contact }));
   f.append(h('p', { text: `作成日時：${APP.created}` }));
 }
 function updateRefreshAll() {
@@ -2606,7 +2547,6 @@ function openSettings() {
   $('#keyInput').type = 'password'; $('#toggleKey').textContent = '表示';
   $('#countSel').value = String(s.perRoute);
   $('#xferSel').value = String(s.maxTransfers ?? '');
-  $('#contactInput').value = s.contact || '';
   $('#useGps').checked = !!s.useGps;
   $('#radiusSel').value = String(s.radius || 1000);
   areaUI = { regions: [...(s.regions || [])], prefs: [...(s.prefs || [])], cities: [...(s.cities || [])] };
@@ -2638,7 +2578,6 @@ $('#settingsForm').addEventListener('submit', e => {
     ekispertKey: $('#keyInput').value.trim(),
     perRoute: parseInt($('#countSel').value, 10) || 3,
     maxTransfers: $('#xferSel').value,
-    contact: $('#contactInput').value.trim(),
     useGps: $('#useGps').checked,
     radius: parseInt($('#radiusSel').value, 10) || 1000,
     ...areaSave()
@@ -2863,7 +2802,7 @@ function applyOrder(force) {
   if (force || sig !== board.dataset.order) renderBoard();
   renderPredictBar();
 }
-const GEO_DENIED = '位置情報の利用が許可されていません。iPhone では「設定」→「プライバシーとセキュリティ」→「位置情報サービス」→「Safari Webサイト」を「このAppの使用中」にしてから、もう一度押してください。下の欄で住所・駅名から設定することもできます。';
+const GEO_DENIED = '位置情報の利用が許可されていません。iPhone では「設定」→「プライバシーとセキュリティ」→「位置情報サービス」→「Safari Webサイト」を「このAppの使用中」にしてから、もう一度押してください。下の欄で駅名・停留所名から設定することもできます。';
 function getPos(highAccuracy, fresh) {
   return new Promise((resolve, reject) => {
     if (!('geolocation' in navigator)) { reject(new Error('この環境では位置情報を使えません')); return; }
@@ -2895,10 +2834,11 @@ function savePlace(key, pl, how) {
   applyOrder(false);
   if (key === 'home') refreshPosition(true);
 }
-/* 住所・駅名・建物名で探す（Transitous の地名検索）。「36.54,136.70」のような座標の貼り付けにも対応 */
+/* 駅名・停留所名で探す（アプリに入れた駅の一覧と北鉄の停留所だけを使い、外部には問い合わせない）。
+   「36.54,136.70」のような座標の貼り付けにも対応 */
 function makePlaceSearch(key) {
   const box = $(`#${key}Search`), input = $('input', box), list = $('ul', box);
-  let items = [], timer = null, ctrl = null, seq = 0;
+  let items = [], timer = null, seq = 0;
   const close = () => { list.hidden = true; input.setAttribute('aria-expanded', 'false'); };
   const show = nodes => { list.replaceChildren(...nodes); list.hidden = false; input.setAttribute('aria-expanded', 'true'); };
   const msg = (t, err) => show([h('li', { class: 'ac-msg' + (err ? ' error' : ''), role: 'presentation', text: t })]);
@@ -2926,53 +2866,10 @@ function makePlaceSearch(key) {
     }
     const hitRank = it => it.rank != null ? it.rank : (() => { const nn = normQ(it.label).replace(/駅$/, ''); return nn === qq ? 0 : nn.startsWith(qq) ? 1 : 2; })();
     local.sort((a, b) => hitRank(a) - hitRank(b));
-    if (ctrl) ctrl.abort();
-    ctrl = new AbortController();
     const my = ++seq;
-    if (local.length) { items = local; render(); } else msg('検索中…');
-    try {
-      const bias = stopsCenter() || regionCenter(); // 今いる場所は送らない
-      const ask = extra => {
-        const p = new URLSearchParams({ text: q.replace(/駅$/, '') || q, language: 'ja', numResults: '8', ...extra });
-        if (bias) { p.set('place', `${bias.lat},${bias.lon}`); p.set('placeBias', '5'); }
-        return getJSON(`${Transitous.base}/api/v1/geocode?${p}`, { signal: ctrl.signal });
-      };
-      const [stopsRes, allRes] = await Promise.allSettled([ask({ type: 'STOP' }), ask({})]);
-      if (my !== seq) return;
-      if (stopsRes.status === 'rejected' && allRes.status === 'rejected') throw allRes.reason;
-      const conv = x => {
-        const modes = Array.isArray(x.modes) ? x.modes.join(' ') : '';
-        const rail = x.type === 'STOP' && /RAIL|SUBWAY|METRO|TRAM|MONORAIL|FUNICULAR/.test(modes);
-        const bus = x.type === 'STOP' && !rail && /BUS|COACH/.test(modes);
-        let label = [x.name, x.houseNumber].filter(Boolean).join(' ');
-        if (rail && !/駅$/.test(label)) label += '駅'; // 鉄道の駅は「森本駅」のように
-        const pref = prefOfAreas(x.areas) || prefNear(x.lat, x.lon);
-        return { lat: x.lat, lon: x.lon, label, pref, city: cityOfAreas(x.areas),
-          sub: [areaText(x.areas).split('・').filter(a => a && prefShort(a) !== prefShort(pref)).join('・'), rail ? '駅' : bus ? 'バス停' : x.type === 'STOP' ? '駅・停留所' : x.type === 'ADDRESS' ? '住所' : '場所'].filter(Boolean).join('・') };
-      };
-      const ok = v => v.status === 'fulfilled' && Array.isArray(v.value) ? v.value.filter(x => x && isFinite(x.lat) && isFinite(x.lon) && x.name) : [];
-      let remote = [];
-      for (const x of [...ok(stopsRes), ...ok(allRes)].map(conv).filter(x => inArea(x.pref, x.city))) {
-        if (local.some(y => y.label.replace(/駅$/, '') === x.label.replace(/駅$/, '') && distM(x, y) < 800)) continue;
-        if (!remote.some(y => y.label === x.label && distM(x, y) < 300)) remote.push(x);
-      }
-      if (bias) {
-        // 近くて名前が合うもの → 近いもの → 遠いが名前が合うもの。遠くて名前も違うもの（似た字の別の場所）は出さない
-        const near = x => distM(bias, x) <= 60000;
-        const g = x => near(x) ? (nameHit(x.label) ? 0 : 1) : (nameHit(x.label) ? 2 : 9);
-        remote = remote.map((x, i) => ({ x, i, g: g(x) })).filter(o => o.g < 9).sort((a, b) => a.g - b.g || a.i - b.i).map(o => o.x);
-        if (/^[\u3041-\u309fー]+$/.test(qq)) remote = remote.filter(x => nameHit(x.label)); // ひらがなで探したときは、名前が合うものだけ
-      } else if (remote.some(x => nameHit(x.label))) {
-        remote = remote.filter(x => nameHit(x.label)); // 基準の場所がないときは、名前が合うものだけ
-      }
-      items = [...local, ...remote].slice(0, 10);
-      if (items.length) render(); else msg('見つかりませんでした。駅名を短くする（例：「森本駅」→「森本」）か、住所で探してください。地図アプリで調べた「緯度,経度」を貼り付けても設定できます。');
-    } catch (e) {
-      if (e && e.name === 'AbortError') return;
-      if (my !== seq) return;
-      if (local.length) return;
-      items = []; msg('検索できませんでした（' + errText(e) + '）。地図アプリで調べた「緯度,経度」を貼り付けても設定できます。', true);
-    }
+    if (my !== seq) return;
+    items = local.slice(0, 10);
+    if (items.length) render(); else msg('見つかりませんでした。駅名・停留所名で探すか、地図アプリで調べた「緯度,経度」を貼り付けてください。');
   }
   input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(run, 350); });
   input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(timer); if (!list.hidden && items.length === 1) choose(items[0]); else run(); } else if (e.key === 'Escape') close(); });
