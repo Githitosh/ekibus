@@ -898,6 +898,9 @@ function trackText(no, mode) {
   if (/^\d+[A-Za-z]?$/.test(no)) return isTrainMode(mode) ? no + '番線' : no + '番のりば';
   return no;
 }
+function isHiddenTripFlag(text) {
+  return /^学期休み期間[、は]運休$/.test(String(text || '').trim());
+}
 function makeTrip({ legs, start, end, transfers, flags = [] }) {
   const transit = legs.filter(l => l.kind === 'transit');
   if (!transit.length) return null;
@@ -2047,6 +2050,7 @@ function tripItem(routeId, t, isBest, now) {
     legList(t));
   if (openKeys.has(detKey)) details.open = true;
   details.addEventListener('toggle', () => { details.open ? openKeys.add(detKey) : openKeys.delete(detKey); });
+  const flags = (t.flags || []).filter(f => !isHiddenTripFlag(f && f.text));
 
   return h('li', { class: 'trip' + (isBest ? ' first' : '') },
     h('div', { class: 'trip-main' },
@@ -2058,7 +2062,7 @@ function tripItem(routeId, t, isBest, now) {
     h('div', { class: 'trip-sub' }, subParts.filter(Boolean).map((s, k) => [k ? h('span', { class: 'sep', 'aria-hidden': 'true', text: '·' }) : null, s]),
       firstTrack ? [h('span', { class: 'sep', 'aria-hidden': 'true', text: '·' }), h('span', { class: trackClass(first.from, 'dep-track'), title: trackTitle(first.from), text: firstTrack })] : null),
     lines,
-    t.flags && t.flags.length ? h('div', { class: 'trip-flags' }, t.flags.map(f => h('span', { class: 'flag' + (f.warn ? ' warn' : ''), text: f.text }))) : null,
+    flags.length ? h('div', { class: 'trip-flags' }, flags.map(f => h('span', { class: 'flag' + (f.warn ? ' warn' : ''), text: f.text }))) : null,
     details);
 }
 function legList(t) {
